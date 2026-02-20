@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VolunteerFlow — Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+</head>
+<body class="min-h-screen bg-gray-100">
+
+  <div class="bg-blue-900 text-white px-8 py-5 flex justify-between items-center shadow-lg">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">VolunteerFlow</h1>
+      <p class="text-blue-300 text-sm mt-0.5">Coordinator Dashboard — Live</p>
+    </div>
+    <div class="text-right">
+      <p id="statTotal" class="font-semibold text-lg">Loading...</p>
+      <p id="statRisk"  class="text-sm text-red-300"></p>
+    </div>
+  </div>
+
+  <div id="flagSection" class="hidden bg-red-50 border-b-2 border-red-200 px-8 py-4">
+    <p class="font-bold text-red-700 mb-3">⚠️ Needs Attention</p>
+    <div id="flagList" class="flex flex-wrap gap-2"></div>
+  </div>
+
+  <div class="px-8 pt-6 pb-2 flex gap-3">
+    <button onclick="filterCards('all')" class="px-4 py-2 rounded-full bg-blue-800 text-white text-sm font-semibold hover:bg-blue-900" id="btn-all">All</button>
+    <button onclick="filterCards('red')" class="px-4 py-2 rounded-full bg-red-100 text-red-700 text-sm font-semibold hover:bg-red-200" id="btn-red">🔴 At Risk</button>
+    <button onclick="filterCards('yellow')" class="px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-semibold hover:bg-yellow-200" id="btn-yellow">🟡 Check In</button>
+    <button onclick="filterCards('green')" class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-semibold hover:bg-green-200" id="btn-green">🟢 Good</button>
+    <a href="checkin.html" class="ml-auto px-4 py-2 rounded-full border border-blue-300 text-blue-700 text-sm hover:bg-blue-50">
+      → Volunteer check-in form
+    </a>
+  </div>
+
+  <div id="cardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 px-8 py-4">
+    <div id="emptyMsg" class="col-span-3 text-center text-gray-400 mt-16 text-lg">
+      No check-ins yet. Share the form link with your volunteers!
+    </div>
+  </div>
+
+  <script>
+    // STEP 3: Firebase config (Your live project keys!) [cite: 208-220]
+    const firebaseConfig = {
+      apiKey: "AIzaSyCIuiidzKhTKrUDEIe34jeevCelWDttA3k",
+      authDomain: "chaavaruthu.firebaseapp.com",
+      databaseURL: "https://chaavaruthu-default-rtdb.firebaseio.com",
+      projectId: "chaavaruthu",
+      storageBucket: "chaavaruthu.firebasestorage.app",
+      messagingSenderId: "21044301735",
+      appId: "1:21044301735:web:c81aa40d29446dc37e7082"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    console.log('Dashboard Firebase ready!');
+
+    // STEP 4: JavaScript logic [cite: 224-393]
+    var allVolunteers = [];
+
+    // MAIN LISTENER [cite: 236-281]
+    db.ref('checkins').on('value', function(snapshot) {
+      var data = snapshot.val();
+
+      document.getElementById('cardGrid').innerHTML = '<div id="emptyMsg" class="col-span-3 text-center text-gray-400 mt-16 text-lg">No check-ins yet.</div>';
+      document.getElementById('flagList').innerHTML = '';
+
+      if (!data) {
+        document.getElementById('statTotal').textContent = '0 volunteers';
+        document.getElementById('statRisk').textContent  = '';
+        document.getElementById('flagSection').classList.add('hidden');
+        return;
+      }
+
+      var emptyMsg = document.getElementById('emptyMsg');
+      if (emptyMsg) emptyMsg.style.display = 'none';
+
+      allVolunteers = Object.entries(data).map(function(entry) {
+        return Object.assign({ key: entry[0] }, entry[1]);
+      });
+
+      allVolunteers.sort(function(a, b) { return a.score - b.score; });
+
+      var atRisk = allVolunteers.filter(function(v) {
+        return v.status === 'red' || v.status === 'yellow';
+      }).length;
+
+      document.getElementById('statTotal').textContent = allVolunteers.length + ' volunteer(s)';
+      document.getElementById('statRisk').textContent = atRisk > 0 ? atRisk + ' need attention ⚠️' : 'All looking good ✓';
+
+      if (atRisk > 0) {
+        document.getElementById('flagSection').classList.remove('hidden');
+        allVolunteers
+          .filter(function(v) { return v.status === 'red' || v.status === 'yellow'; })
+          .forEach(function(v) {
+            document.getElementById('flagList').appendChild(makeFlagBadge(v));
+          });
+      } else {
+        document.getElementById('flagSection').classList.add('hidden');
+      }
+
+      renderCards(allVolunteers);
+    });
+
+    // renderCards: draws cards into the grid [cite: 283-295]
+    function renderCards(list) {
+      var grid = document.getElementById('cardGrid');
+      grid.innerHTML = '';
+
+      if (list.length === 0) {
+        grid.innerHTML = '<p class="col-span-3 text-center text-gray-400 mt-8">No volunteers match this filter.</p>';
+        return;
+      }
+
+      list.forEach(function(v) {
+        grid.appendChild(makeCard(v));
+      });
+    }
+
+    // filterCards: called by the filter buttons [cite: 297-304]
+    function filterCards(status) {
+      var filtered = status === 'all' 
+        ? allVolunteers 
+        : allVolunteers.filter(function(v) { return v.status === status; });
+      renderCards(filtered);
+    }
+
+    // makeCard: builds one volunteer card element [cite: 306-382]
+    function makeCard(v) {
+      var cfg = {
+        green:  { bg: 'bg-green-50', border: 'border-green-400', score: 'text-green-600', badge: 'bg-green-100 text-green-800', label: '🟢 Good to Go' },
+        yellow: { bg: 'bg-yellow-50', border: 'border-yellow-400', score: 'text-yellow-600', badge: 'bg-yellow-100 text-yellow-800', label: '🟡 Check In' },
+        red:    { bg: 'bg-red-50', border: 'border-red-500', score: 'text-red-600', badge: 'bg-red-100 text-red-800', label: '🔴 At Risk' }
+      };
+      var c = cfg[v.status] || cfg.green;
+
+      var timeAgo = 'Unknown';
+      if (v.timestamp) {
+        var diffMins = Math.floor((Date.now() - v.timestamp) / 60000);
+        if      (diffMins <  1)  { timeAgo = 'Just now'; }
+        else if (diffMins < 60)  { timeAgo = diffMins + ' min ago'; }
+        else                     { timeAgo = Math.floor(diffMins/60) + ' hr ago'; }
+      }
+
+      var card = document.createElement('div');
+      card.className = 'rounded-2xl border-2 p-6 shadow-sm transition-all ' + c.bg + ' ' + c.border;
+
+      card.innerHTML = `
+        <div class="flex justify-between items-start mb-1">
+          <h3 class="font-bold text-xl text-gray-800">${v.name || v.key}</h3>
+          <span class="text-xs text-gray-400 mt-1">${timeAgo}</span>
+        </div>
+
+        <div class="${c.score} text-6xl font-black my-4 leading-none">${v.score}</div>
+        <p class="text-gray-400 text-xs mb-4">Bandwidth Score (0–100)</p>
+
+        <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ${c.badge}">
+          ${c.label}
+        </span>
+
+        <div class="mt-5 space-y-2 text-sm text-gray-600 border-t pt-4">
+          <div class="flex justify-between">
+            <span>⚡ Energy</span>
+            <span class="font-semibold">${v.energy}/5</span>
+          </div>
+          <div class="flex justify-between">
+            <span>💙 Emotional load</span>
+            <span class="font-semibold">${v.emotional}/5</span>
+          </div>
+          <div class="flex justify-between">
+            <span>🕐 Hours available</span>
+            <span class="font-semibold">${v.hours}/5</span>
+          </div>
+          <div class="flex justify-between">
+            <span>😌 Calm level</span>
+            <span class="font-semibold">${v.stress}/5</span>
+          </div>
+        </div>
+
+        ${v.note 
+          ? `<p class="mt-4 text-sm italic text-gray-500 bg-white rounded-xl p-3 border">"${v.note}"</p>` 
+          : ''
+        }
+      `;
+      return card;
+    }
+
+    // makeFlagBadge: pill for the Needs Attention strip [cite: 384-393]
+    function makeFlagBadge(v) {
+      var pill = document.createElement('div');
+      var isRed = v.status === 'red';
+      pill.className = 'px-4 py-1.5 rounded-full text-sm font-bold cursor-pointer ' + 
+                       (isRed ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800');
+      pill.textContent = (isRed ? '🔴 ' : '🟡 ') + (v.name || v.key) + '  (' + v.score + ')'  ;
+      return pill;
+    }
+  </script>
+</body>
+</html>
