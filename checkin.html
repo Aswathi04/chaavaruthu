@@ -11,7 +11,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <style>
-    /* Step 2: Visual design cleanup */
     :root {
       --bg-color: #FDFAF6;
       --card-border: #EEEBE6;
@@ -38,7 +37,7 @@
     h2 { font-size: 22px; }
 
     .container {
-      max-w-width: 600px;
+      max-width: 600px;
       margin: 0 auto;
     }
 
@@ -62,6 +61,9 @@
     input[type="text"]:focus, input[type="number"]:focus {
       border-color: var(--accent);
     }
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
 
     button {
       font-family: 'Inter', sans-serif;
@@ -112,11 +114,52 @@
     .delete-btn { background: none; color: #CCCCCC; font-size: 20px; padding: 4px; }
     .delete-btn:hover { color: #FF6B6B; }
 
-    /* D3 Containers */
     .plate-container { display: flex; justify-content: center; margin-bottom: 24px; position: relative; }
     .plate-details { text-align: center; margin-top: 16px; font-size: 14px; }
-    .history-strip { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 12px; }
-    .history-item { text-align: center; font-size: 12px; color: var(--text-muted); }
+
+    /* Calendar Grid Styles */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .calendar-cell {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px 8px;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .calendar-cell.has-data {
+      cursor: pointer;
+    }
+    .calendar-cell.has-data:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-color: var(--accent);
+    }
+    .calendar-date {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 12px;
+      font-weight: 600;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; 
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-content {
+      background: #FFFFFF; border-radius: 16px; padding: 32px; width: 100%; max-width: 420px; position: relative;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .close-btn {
+      position: absolute; top: 16px; right: 20px; background: none; border: none; font-size: 28px; color: #999; cursor: pointer;
+    }
+    .close-btn:hover { color: var(--text-main); }
 
     .hidden { display: none !important; }
   </style>
@@ -158,9 +201,7 @@
 
     <div id="reflection-section" class="card hidden" style="text-align: center; padding: 40px 24px;">
       <h2>How this week felt</h2>
-      
       <div id="reflection-plate" style="display: flex; justify-content: center; margin: 24px 0;"></div>
-      
       <p id="ref-raw-hours" style="font-weight: 600; font-size: 18px; margin-bottom: 8px;"></p>
       <p id="ref-composition" style="color: var(--text-muted); margin-bottom: 24px;"></p>
       
@@ -168,29 +209,44 @@
         <p id="ref-conditional" style="font-weight: 600; margin-bottom: 8px;"></p>
         <p id="ref-comparison" style="font-size: 14px; color: var(--text-muted); margin: 0;"></p>
       </div>
-
-      <button onclick="document.getElementById('history-section').scrollIntoView({behavior: 'smooth'})" class="btn-secondary">See my history</button>
+      <button onclick="document.getElementById('history-section').scrollIntoView({behavior: 'smooth'})" class="btn-secondary">See my calendar</button>
     </div>
 
-    <div id="history-section" style="margin-top: 40px;">
-      <h3 style="font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Recent history</h3>
-      <div id="history-strip" class="history-strip"></div>
+    <div id="history-section" style="margin-top: 48px;">
+      <div style="border-bottom: 1px solid var(--card-border); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: baseline;">
+        <h3 style="font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Plate Portrait Gallery</h3>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">A visual record of your capacity over the last 8 weeks. Click a plate to review.</p>
+      
+      <div id="calendar-grid" class="calendar-grid"></div>
     </div>
 
   </div>
 
+  <div id="history-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <button class="close-btn" onclick="document.getElementById('history-modal').classList.add('hidden')">&times;</button>
+      <h2 id="modal-title" style="font-size: 20px; margin-bottom: 4px;">Week of ...</h2>
+      <p id="modal-subtitle" style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Weighted Load: 0 / 10</p>
+      
+      <div id="modal-plate" style="display: flex; justify-content: center; margin-bottom: 32px;"></div>
+      
+      <h3 style="font-size: 12px; text-transform: uppercase; color: #999; border-bottom: 1px solid #EEE; padding-bottom: 8px; margin-bottom: 12px;">Tasks Logged</h3>
+      <div id="modal-task-list" style="font-size: 14px; max-height: 200px; overflow-y: auto; padding-right: 8px;"></div>
+    </div>
+  </div>
+
   <script>
     // --- FIREBASE CONFIGURATION ---
-     const firebaseConfig = {
-    apiKey: "AIzaSyCIuiidzKhTKrUDEIe34jeevCelWDttA3k",
-    authDomain: "chaavaruthu.firebaseapp.com",
-    databaseURL: "https://chaavaruthu-default-rtdb.firebaseio.com",
-    projectId: "chaavaruthu",
-    storageBucket: "chaavaruthu.firebasestorage.app",
-    messagingSenderId: "21044301735",
-    appId: "1:21044301735:web:c81aa40d29446dc37e7082",
-    measurementId: "G-18BY8VY06N"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyCIuiidzKhTKrUDEIe34jeevCelWDttA3k",
+      authDomain: "chaavaruthu.firebaseapp.com",
+      databaseURL: "https://chaavaruthu-default-rtdb.firebaseio.com",
+      projectId: "chaavaruthu",
+      storageBucket: "chaavaruthu.firebasestorage.app",
+      messagingSenderId: "21044301735",
+      appId: "1:21044301735:web:c81aa40d29446dc37e7082"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -213,7 +269,6 @@
     async function init() {
       document.getElementById('greeting').innerText = `Hey ${volunteerId}`;
       
-      // Fetch profile capacity
       db.ref(`volunteers/${volunteerId}/profile/capacityThreshold`).once('value', snap => {
         if (snap.exists()) {
           capacityThreshold = snap.val();
@@ -221,7 +276,6 @@
         }
       });
 
-      // Fetch Autocomplete
       db.ref(`volunteers/${volunteerId}/autocomplete`).once('value', snap => {
         if (snap.exists()) {
           const list = document.getElementById('task-autocomplete');
@@ -234,9 +288,10 @@
         }
       });
 
-      // Render initial empty state
       if(tasks.length === 0) addTaskRow();
-      renderHistory();
+      
+      // Load the calendar right away
+      renderCalendarGallery();
     }
 
     // --- TASK MANAGEMENT ---
@@ -330,26 +385,28 @@
         .append("g").attr("transform", `translate(${size/2},${size/2})`);
 
       const radius = size / 2;
-      const rimRadius = radius - 10; // Room for overflow
+      const rimRadius = radius - (size > 100 ? 10 : 4); // Scaled padding
 
       // Outer Rim
       svg.append("circle")
         .attr("r", rimRadius)
         .attr("fill", "none")
         .attr("stroke", "#E8E3DC")
-        .attr("stroke-width", 8);
+        .attr("stroke-width", size > 100 ? 8 : 3);
 
       if (total === 0) {
-        svg.append("circle").attr("r", rimRadius - 4).attr("fill", "#F5F5F5");
-        svg.append("text").attr("text-anchor", "middle").attr("dy", "5").attr("fill", "#AAAAAA").attr("font-size", size > 100 ? "14px" : "8px").text("Empty");
+        svg.append("circle").attr("r", rimRadius - (size > 100 ? 4 : 2)).attr("fill", "#F5F5F5");
+        if (size > 100) {
+          svg.append("text").attr("text-anchor", "middle").attr("dy", "5").attr("fill", "#AAAAAA").attr("font-size", "14px").text("Empty");
+        }
         return;
       }
 
       const weightedLoad = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
-      const scale = weightedLoad > cap ? 1.1 : 1.0; // Overflow logic
+      const scale = weightedLoad > cap ? 1.1 : 1.0; 
 
       const pie = d3.pie().value(d => d.value).sort(null);
-      const arc = d3.arc().innerRadius(0).outerRadius((rimRadius - 4) * scale);
+      const arc = d3.arc().innerRadius(0).outerRadius((rimRadius - (size > 100 ? 4 : 2)) * scale);
 
       const drawData = [
         { label: "energizing", value: eHrs },
@@ -361,8 +418,7 @@
         .attr("fill", d => colors[d.data.label])
         .attr("d", arc);
 
-      // Interactive click for main plate only
-      if (size > 100) {
+      if (size > 100 && containerId === "plate-viz") {
         arcs.style("cursor", "pointer")
             .on("click", (event, d) => showDetails(d.data.label, taskData));
       }
@@ -389,7 +445,6 @@
       const validTasks = tasks.filter(t => t.name.trim() !== "" && t.tag !== null);
       if(validTasks.length === 0) return alert("Please add at least one complete task with a tag.");
 
-      // Save to Firebase
       await db.ref(`volunteers/${volunteerId}/weeks/${currentWeekOf}/tasks`).set(validTasks);
 
       const autoUpdates = {};
@@ -444,29 +499,82 @@
         document.getElementById('ref-comparison').innerText = "No data from last week to compare.";
       }
       
-      renderHistory();
+      renderCalendarGallery(); // Refresh calendar to include new submission
     }
 
-    // --- HISTORY STRIP ---
-    async function renderHistory() {
-      const container = document.getElementById('history-strip');
+    // --- CALENDAR GALLERY LOGIC ---
+    async function renderCalendarGallery() {
+      const container = document.getElementById('calendar-grid');
       container.innerHTML = '';
 
-      for (let i = 0; i < 4; i++) {
+      // Fetch all past weeks for this volunteer in one call
+      const snap = await db.ref(`volunteers/${volunteerId}/weeks`).once('value');
+      const allWeeksData = snap.exists() ? snap.val() : {};
+
+      // Build the grid for the last 8 weeks
+      for (let i = 0; i < 8; i++) {
         const d = new Date();
-        d.setDate(d.getDate() - (i * 7));
-        const weekStr = getMonday(d);
+        const day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6:1);
+        d.setDate(diff - (i * 7)); // Walk backwards week by week
+        
+        const weekStr = d.toISOString().split('T')[0];
         const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-        const div = document.createElement('div');
-        div.className = 'history-item';
-        div.innerHTML = `<div id="hist-${weekStr}" style="margin-bottom: 8px;"></div><span>${displayDate}</span>`;
-        container.appendChild(div);
+        const cell = document.createElement('div');
+        cell.className = 'calendar-cell';
+        
+        // Ensure unique ID for D3 container
+        const svgContainerId = `cal-plate-${weekStr}`;
+        cell.innerHTML = `
+          <div id="${svgContainerId}" style="height: 60px; display: flex; justify-content: center; align-items: center;"></div>
+          <div class="calendar-date">${displayDate}</div>
+        `;
+        container.appendChild(cell);
 
-        const snap = await db.ref(`volunteers/${volunteerId}/weeks/${weekStr}/tasks`).once('value');
-        const weekTasks = snap.exists() ? snap.val() : [];
-        drawPlateSVG(`hist-${weekStr}`, 60, weekTasks, capacityThreshold);
+        const weekTasksObj = allWeeksData[weekStr] ? allWeeksData[weekStr].tasks : null;
+        // Firebase might store arrays as objects with indices if keys are missing, ensure it's an array
+        const weekTasks = weekTasksObj ? (Array.isArray(weekTasksObj) ? weekTasksObj : Object.values(weekTasksObj)) : [];
+
+        drawPlateSVG(svgContainerId, 60, weekTasks, capacityThreshold);
+
+        if (weekTasks.length > 0) {
+          cell.classList.add('has-data');
+          cell.title = "Click to view details";
+          cell.onclick = () => openHistoryModal(displayDate, weekTasks);
+        } else {
+          cell.title = "No tasks logged this week";
+        }
       }
+    }
+
+    function openHistoryModal(dateStr, tasksArr) {
+      document.getElementById('modal-title').innerText = `Week of ${dateStr}`;
+      
+      // Calculate math for modal subtitle
+      const eHrs = tasksArr.filter(t => t.tag === 'energizing').reduce((s,t) => s+t.hours, 0);
+      const nHrs = tasksArr.filter(t => t.tag === 'neutral').reduce((s,t) => s+t.hours, 0);
+      const dHrs = tasksArr.filter(t => t.tag === 'draining').reduce((s,t) => s+t.hours, 0);
+      const weightedLoad = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
+      
+      document.getElementById('modal-subtitle').innerText = `Weighted Load: ${weightedLoad.toFixed(1)} / ${capacityThreshold}`;
+
+      // Build task list HTML
+      let listHtml = '';
+      tasksArr.forEach(t => {
+        const emoji = t.tag === 'energizing' ? '🔥' : t.tag === 'neutral' ? '😐' : '🪨';
+        listHtml += `
+          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F5F5F5; margin-bottom: 4px;">
+            <span>${emoji} ${t.name} <span style="color: #999; font-size: 12px;">(${t.org || 'None'})</span></span>
+            <span style="font-weight: bold; color: var(--text-main);">${t.hours}h</span>
+          </div>`;
+      });
+      document.getElementById('modal-task-list').innerHTML = listHtml;
+
+      // Show Modal
+      document.getElementById('history-modal').classList.remove('hidden');
+
+      // Draw large plate in modal
+      setTimeout(() => drawPlateSVG('modal-plate', 160, tasksArr, capacityThreshold), 10);
     }
 
     init();
