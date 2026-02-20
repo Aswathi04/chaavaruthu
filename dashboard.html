@@ -1,251 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Coordinator Capacity Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your team this week</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <style>
+    /* Step 2: Visual design cleanup */
+    :root {
+      --bg-color: #FDFAF6;
+      --card-border: #EEEBE6;
+      --text-main: #333333;
+      --text-muted: #777777;
+      --energizing: #F4A261;
+      --neutral: #A8C5A0;
+      --draining: #6B7FA3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      line-height: 1.7;
+      padding: 40px 20px;
+    }
+
+    h1, h2, h3 { font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
+    h1 { font-size: 28px; }
+
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background-color: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.2s;
+      position: relative;
+    }
+    .card:hover { transform: translateY(-2px); }
+
+    .status-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      position: absolute; top: 24px; right: 24px;
+    }
+    .dot-green { background-color: #4CAF50; }
+    .dot-yellow { background-color: #FFC107; }
+    .dot-red { background-color: #F44336; }
+
+    /* Inline Expansion Panel */
+    .detail-panel {
+      grid-column: 1 / -1;
+      background-color: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+    }
+    .detail-plate { flex-shrink: 0; }
+    .detail-info { flex-grow: 1; }
+    .detail-tasks { margin-top: 16px; font-size: 14px; }
+    .task-item { border-bottom: 1px solid #F5F5F5; padding: 8px 0; display: flex; justify-content: space-between; }
+
+    .hidden { display: none !important; }
+  </style>
 </head>
-<body class="min-h-screen bg-gray-100">
+<body>
 
-  <div class="bg-blue-900 text-white px-8 py-5 flex justify-between items-center shadow-lg">
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight">VolunteerFlow</h1>
-      <p class="text-blue-300 text-sm mt-0.5">Coordinator Capacity Dashboard</p>
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--card-border); padding-bottom: 16px; margin-bottom: 32px;">
+      <h1>Your team this week</h1>
+      <p id="loading-text" style="color: var(--text-muted);">Fetching data...</p>
     </div>
-    <div class="text-right">
-      <p id="statTotal" class="font-semibold text-lg">Loading...</p>
-    </div>
-  </div>
 
-  <div class="px-8 pt-6 pb-2 flex gap-3">
-    <button onclick="filterCards('all')" class="px-4 py-2 rounded-full bg-blue-800 text-white text-sm font-semibold hover:bg-blue-900">All</button>
-    <button onclick="filterCards('red')" class="px-4 py-2 rounded-full bg-red-100 text-red-700 text-sm font-semibold hover:bg-red-200">🔴 Overflow (> 1.0)</button>
-    <button onclick="filterCards('yellow')" class="px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-semibold hover:bg-yellow-200">🟡 Near Cap (> 0.85)</button>
-    <button onclick="filterCards('green')" class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-semibold hover:bg-green-200">🟢 Balanced</button>
-    <a href="checkin.html" class="ml-auto px-4 py-2 rounded-full border border-blue-300 text-blue-700 text-sm hover:bg-blue-50">
-      → View Input Form
-    </a>
-  </div>
-
-  <div id="cardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 px-8 py-4">
-    <div id="loadingMsg" class="col-span-full text-center mt-16 text-gray-400">Loading live data...</div>
-  </div>
-
-  <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden relative flex flex-col max-h-full">
-      <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-2xl font-bold">&times;</button>
-      <div id="modal-content" class="p-8 overflow-y-auto"></div>
-    </div>
+    <div id="dashboard-grid" class="grid"></div>
   </div>
 
   <script>
-    // --- 1. FIREBASE SETUP ---
+    // --- FIREBASE CONFIGURATION ---
     const firebaseConfig = {
-      apiKey: "AIzaSyCIuiidzKhTKrUDEIe34jeevCelWDttA3k",
-      authDomain: "chaavaruthu.firebaseapp.com",
-      databaseURL: "https://chaavaruthu-default-rtdb.firebaseio.com",
-      projectId: "chaavaruthu",
-      storageBucket: "chaavaruthu.firebasestorage.app",
-      messagingSenderId: "21044301735",
-      appId: "1:21044301735:web:c81aa40d29446dc37e7082"
-    };
+    apiKey: "AIzaSyCIuiidzKhTKrUDEIe34jeevCelWDttA3k",
+    authDomain: "chaavaruthu.firebaseapp.com",
+    databaseURL: "https://chaavaruthu-default-rtdb.firebaseio.com",
+    projectId: "chaavaruthu",
+    storageBucket: "chaavaruthu.firebasestorage.app",
+    messagingSenderId: "21044301735",
+    appId: "1:21044301735:web:c81aa40d29446dc37e7082",
+    measurementId: "G-18BY8VY06N"
+  };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let allVolunteers = [];
+    const colors = { energizing: "#F4A261", neutral: "#A8C5A0", draining: "#6B7FA3" };
+    let volunteersData = {};
 
-    // Color Scale for Mini-Plates
-    const colorScale = d3.scaleOrdinal()
-      .domain(["energizing", "neutral", "draining"])
-      .range(["#F4A261", "#A8C5A0", "#6B7FA3"]);
-    const pie = d3.pie().value(d => d.value).sort(null);
+    function getLatestWeek(weeksObj) {
+      if (!weeksObj) return null;
+      const dates = Object.keys(weeksObj).sort().reverse();
+      return dates.length > 0 ? weeksObj[dates[0]].tasks : null;
+    }
 
-    // --- 2. DATA LISTENER ---
     db.ref('volunteers').on('value', snap => {
-      document.getElementById('loadingMsg').style.display = 'none';
-      const data = snap.val();
+      document.getElementById('loading-text').innerText = "Live";
+      const grid = document.getElementById('dashboard-grid');
+      grid.innerHTML = '';
       
-      if(!data) {
-        document.getElementById('cardGrid').innerHTML = '<div class="col-span-full text-center text-gray-400 mt-16">No volunteer data found.</div>';
+      const data = snap.val();
+      if (!data) {
+        grid.innerHTML = '<p style="color: var(--text-muted);">Nothing yet — how\'s the week looking?</p>';
         return;
       }
 
-      allVolunteers = [];
+      volunteersData = {};
 
       Object.keys(data).forEach(vid => {
         const vol = data[vid];
-        const capacity = (vol.profile && vol.profile.capacityThreshold) ? parseFloat(vol.profile.capacityThreshold) : 10;
+        const capacity = (vol.profile && vol.profile.capacityThreshold) ? vol.profile.capacityThreshold : 10;
+        const latestTasks = getLatestWeek(vol.weeks);
         
-        let latestTasks = [];
-        let weekLabel = "No data";
-        
-        if (vol.weeks) {
-          const weeksList = Object.keys(vol.weeks).sort();
-          if (weeksList.length > 0) {
-            weekLabel = weeksList[weeksList.length - 1]; // newest
-            const tasksObj = vol.weeks[weekLabel].tasks;
-            if (tasksObj) latestTasks = Object.values(tasksObj);
-          }
-        }
+        if (!latestTasks) return; // Skip if no task history at all
 
-        const eHrs = latestTasks.filter(t => t.tag === 'energizing').reduce((s,t) => s+t.hours, 0);
-        const nHrs = latestTasks.filter(t => t.tag === 'neutral').reduce((s,t) => s+t.hours, 0);
-        const dHrs = latestTasks.filter(t => t.tag === 'draining').reduce((s,t) => s+t.hours, 0);
+        const tasksArr = Object.values(latestTasks);
+        const eHrs = tasksArr.filter(t => t.tag === 'energizing').reduce((s,t) => s+t.hours, 0);
+        const nHrs = tasksArr.filter(t => t.tag === 'neutral').reduce((s,t) => s+t.hours, 0);
+        const dHrs = tasksArr.filter(t => t.tag === 'draining').reduce((s,t) => s+t.hours, 0);
         
         const weightedLoad = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
-        const ratio = capacity > 0 ? weightedLoad / capacity : 0;
+        const ratio = weightedLoad / capacity;
         
-        // Flag logic override
-        let status = 'green';
-        if (ratio >= 1.0) status = 'red';
-        else if (ratio > 0.85) status = 'yellow';
+        let statusClass = 'dot-green';
+        if (ratio > 1.0) statusClass = 'dot-red';
+        else if (ratio > 0.85) statusClass = 'dot-yellow';
 
-        allVolunteers.push({
-          id: vid,
-          capacity, latestTasks, eHrs, nHrs, dHrs, weightedLoad, ratio, status, weekLabel
+        volunteersData[vid] = { tasks: tasksArr, capacity, weightedLoad, ratio };
+
+        // Create Card
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="status-dot ${statusClass}"></div>
+          <h2 style="font-size: 18px; margin-bottom: 16px;">${vid}</h2>
+          <div id="mini-${vid}" style="display: flex; justify-content: center;"></div>
+        `;
+        
+        // Handle Expansion
+        card.addEventListener('click', () => {
+          document.querySelectorAll('.detail-panel').forEach(p => p.remove());
+          
+          const panel = document.createElement('div');
+          panel.className = 'detail-panel';
+          
+          let tasksHtml = '';
+          tasksArr.forEach(t => {
+            const emoji = t.tag === 'energizing' ? '🔥' : t.tag === 'neutral' ? '😐' : '🪨';
+            tasksHtml += `<div class="task-item"><span>${emoji} ${t.name} <span style="color: #999; font-size: 12px;">(${t.org})</span></span> <strong>${t.hours}h</strong></div>`;
+          });
+
+          panel.innerHTML = `
+            <div class="detail-plate" id="detail-svg-${vid}"></div>
+            <div class="detail-info">
+              <h2 style="margin-bottom: 4px;">${vid}'s Week</h2>
+              <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Weighted Load: ${weightedLoad.toFixed(1)} / Capacity: ${capacity}</p>
+              <h3 style="font-size: 14px; text-transform: uppercase; color: #999; border-bottom: 1px solid #EEE; padding-bottom: 8px;">Tasks Logged</h3>
+              <div class="detail-tasks">${tasksHtml}</div>
+            </div>
+            <button onclick="this.parentElement.remove()" style="background:none; border:none; font-size: 24px; color: #CCC; cursor: pointer; position: absolute; right: 24px; top: 24px;">×</button>
+          `;
+          
+          card.insertAdjacentElement('afterend', panel);
+          drawPlateSVG(`detail-svg-${vid}`, 200, tasksArr, capacity);
         });
-      });
 
-      // Sort by highest ratio
-      allVolunteers.sort((a, b) => b.ratio - a.ratio);
-      
-      document.getElementById('statTotal').textContent = `${allVolunteers.length} Active Volunteers`;
-      renderCards(allVolunteers);
+        grid.appendChild(card);
+        drawPlateSVG(`mini-${vid}`, 60, tasksArr, capacity);
+      });
     });
 
-    // --- 3. RENDERING ---
-    function renderCards(list) {
-      const grid = document.getElementById('cardGrid');
-      grid.innerHTML = '';
-      
-      list.forEach(v => {
-        const cfg = {
-          green:  { bg: 'bg-green-50', border: 'border-green-200' },
-          yellow: { bg: 'bg-yellow-50', border: 'border-yellow-400' },
-          red:    { bg: 'bg-red-50', border: 'border-red-500 shadow-red-200 shadow-lg ring-2 ring-red-400' }
-        };
-        const c = cfg[v.status] || cfg.green;
+    // --- D3 PLATE RENDERER (Shared logic) ---
+    function drawPlateSVG(containerId, size, taskData, cap) {
+      const container = d3.select(`#${containerId}`);
+      container.selectAll("*").remove();
 
-        const card = document.createElement('div');
-        card.className = `rounded-2xl border-2 p-5 transition-all cursor-pointer hover:-translate-y-1 bg-white ${c.border}`;
-        card.onclick = () => openModal(v.id);
+      const eHrs = taskData.filter(t => t.tag === 'energizing').reduce((s,t) => s+t.hours, 0);
+      const nHrs = taskData.filter(t => t.tag === 'neutral').reduce((s,t) => s+t.hours, 0);
+      const dHrs = taskData.filter(t => t.tag === 'draining').reduce((s,t) => s+t.hours, 0);
+      const weightedLoad = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
 
-        card.innerHTML = `
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h3 class="font-bold text-lg text-gray-800">${v.id}</h3>
-              <p class="text-xs text-gray-400 mt-1">Week: ${v.weekLabel}</p>
-            </div>
-            <div id="mini-svg-${v.id}" class="w-[60px] h-[60px] flex-shrink-0"></div>
-          </div>
-          
-          <div class="flex items-end gap-2 mt-4">
-            <div class="text-3xl font-black text-gray-800 leading-none">${v.weightedLoad.toFixed(1)}</div>
-            <div class="text-sm text-gray-400 mb-1">/ ${v.capacity} hrs</div>
-          </div>
-          
-          <div class="w-full bg-gray-200 rounded-full h-1.5 mt-3 overflow-hidden">
-            <div class="${v.status === 'red' ? 'bg-red-500' : v.status === 'yellow' ? 'bg-yellow-500' : 'bg-green-500'} h-1.5 rounded-full" style="width: ${Math.min(100, v.ratio * 100)}%"></div>
-          </div>
-        `;
-        grid.appendChild(card);
-
-        // Render D3 Mini Plate inside the card
-        drawMiniPlate(v, `#mini-svg-${v.id}`, 60);
-      });
-    }
-
-    function drawMiniPlate(v, selector, size) {
-      const radius = size / 2;
-      const baseRadius = radius - 4; // leave room for stroke
-
-      const svg = d3.select(selector).append("svg")
+      const svg = container.append("svg")
         .attr("width", size).attr("height", size)
         .append("g").attr("transform", `translate(${size/2},${size/2})`);
 
-      // Outer Rim
-      svg.append("circle").attr("r", baseRadius).attr("fill", "none").attr("stroke", "#e5e7eb").attr("stroke-width", 2);
+      const radius = size / 2;
+      const rimRadius = radius - (size > 100 ? 10 : 4);
 
-      let scale = 1;
-      if (v.capacity > 0 && v.weightedLoad > v.capacity) {
-        scale = Math.min(1.15, v.weightedLoad / v.capacity);
-      }
-      
-      const arcGenerator = d3.arc().innerRadius(0).outerRadius(baseRadius * scale);
-      
-      const drawData = (v.eHrs+v.nHrs+v.dHrs === 0) 
-        ? [{ label: "empty", value: 1 }] 
-        : [{ label: "energizing", value: v.eHrs }, { label: "neutral", value: v.nHrs }, { label: "draining", value: v.dHrs }];
+      svg.append("circle").attr("r", rimRadius).attr("fill", "none").attr("stroke", "#E8E3DC").attr("stroke-width", size > 100 ? 8 : 4);
 
-      svg.selectAll(".slice").data(pie(drawData))
-        .enter().append("path")
-        .attr("class", "slice")
-        .attr("fill", d => d.data.label === "empty" ? "transparent" : colorScale(d.data.label))
-        .attr("d", arcGenerator);
-    }
+      const scale = weightedLoad > cap ? 1.1 : 1.0;
+      const pie = d3.pie().value(d => d.value).sort(null);
+      const arc = d3.arc().innerRadius(0).outerRadius((rimRadius - (size > 100 ? 4 : 2)) * scale);
 
-    function filterCards(status) {
-      const filtered = status === 'all' ? allVolunteers : allVolunteers.filter(v => v.status === status);
-      renderCards(filtered);
-    }
+      const drawData = [{ label: "energizing", value: eHrs }, { label: "neutral", value: nHrs }, { label: "draining", value: dHrs }];
 
-    // --- 4. MODAL LOGIC ---
-    function openModal(vid) {
-      const v = allVolunteers.find(x => x.id === vid);
-      if(!v) return;
-
-      const modal = document.getElementById('modal-overlay');
-      const content = document.getElementById('modal-content');
-      
-      let html = `
-        <h2 class="text-3xl font-bold text-gray-800 mb-1">${v.id}</h2>
-        <p class="text-sm text-gray-500 mb-6">Week of ${v.weekLabel} • ${v.capacity} hrs capacity</p>
-        
-        <div class="flex justify-center mb-6">
-          <div id="modal-svg-container" class="w-[180px] h-[180px]"></div>
-        </div>
-
-        <div class="bg-gray-50 rounded-xl p-4 mb-6 text-center shadow-sm border border-gray-100">
-          <p class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Weighted Load</p>
-          <div class="text-4xl font-black ${v.status === 'red' ? 'text-red-600' : 'text-blue-900'}">${v.weightedLoad.toFixed(1)} <span class="text-xl text-gray-400 font-normal">/ ${v.capacity}</span></div>
-        </div>
-      `;
-
-      if (v.latestTasks.length === 0) {
-        html += `<p class="text-center text-gray-400 italic">No tasks logged.</p>`;
-      } else {
-        html += `<div class="space-y-2">`;
-        v.latestTasks.forEach(t => {
-          const emoji = t.tag === 'energizing' ? '🔥' : t.tag === 'neutral' ? '😐' : '🪨';
-          html += `
-            <div class="flex justify-between items-center p-3 border-b border-gray-100 last:border-0">
-              <div>
-                <span class="font-semibold text-gray-800">${t.name}</span>
-                <span class="text-xs text-gray-400 ml-1">(${t.org})</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <span class="text-lg">${emoji}</span>
-                <span class="font-bold w-8 text-right">${t.hours}h</span>
-              </div>
-            </div>
-          `;
-        });
-        html += `</div>`;
-      }
-
-      content.innerHTML = html;
-      modal.classList.remove('hidden');
-
-      // Draw large plate in modal
-      setTimeout(() => drawMiniPlate(v, '#modal-svg-container', 180), 10);
-    }
-
-    function closeModal() {
-      document.getElementById('modal-overlay').classList.add('hidden');
+      svg.append("g").selectAll("path").data(pie(drawData)).enter().append("path")
+        .attr("fill", d => colors[d.data.label])
+        .attr("d", arc);
     }
   </script>
 </body>
