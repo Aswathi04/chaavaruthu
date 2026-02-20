@@ -39,13 +39,58 @@
   </div>
 
   <div id="cardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 px-8 py-4">
-    <div id="emptyMsg" class="col-span-3 text-center text-gray-400 mt-16 text-lg">
-      No check-ins yet. Share the form link with your volunteers!
+    
+    <div id="loadingMsg" class="col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div class="rounded-2xl border-2 border-gray-100 p-6 bg-white animate-pulse shadow-sm">
+        <div class="flex justify-between items-start mb-1">
+          <div class="h-6 bg-gray-200 rounded w-1/3"></div>
+          <div class="h-3 bg-gray-100 rounded w-1/4 mt-1"></div>
+        </div>
+        <div class="h-16 bg-gray-100 rounded w-1/2 my-4"></div>
+        <div class="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div class="h-6 bg-gray-200 rounded-full w-1/3 mb-2"></div>
+        <div class="mt-5 space-y-3 border-t pt-4">
+          <div class="h-4 bg-gray-100 rounded w-full"></div>
+          <div class="h-4 bg-gray-100 rounded w-5/6"></div>
+          <div class="h-4 bg-gray-100 rounded w-full"></div>
+        </div>
+      </div>
+      <div class="rounded-2xl border-2 border-gray-100 p-6 bg-white animate-pulse shadow-sm hidden sm:block delay-75">
+        <div class="flex justify-between items-start mb-1">
+          <div class="h-6 bg-gray-200 rounded w-1/2"></div>
+          <div class="h-3 bg-gray-100 rounded w-1/4 mt-1"></div>
+        </div>
+        <div class="h-16 bg-gray-100 rounded w-1/3 my-4"></div>
+        <div class="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div class="h-6 bg-gray-200 rounded-full w-1/4 mb-2"></div>
+        <div class="mt-5 space-y-3 border-t pt-4">
+          <div class="h-4 bg-gray-100 rounded w-11/12"></div>
+          <div class="h-4 bg-gray-100 rounded w-full"></div>
+          <div class="h-4 bg-gray-100 rounded w-4/5"></div>
+        </div>
+      </div>
+      <div class="rounded-2xl border-2 border-gray-100 p-6 bg-white animate-pulse shadow-sm hidden lg:block delay-150">
+        <div class="flex justify-between items-start mb-1">
+          <div class="h-6 bg-gray-200 rounded w-1/3"></div>
+          <div class="h-3 bg-gray-100 rounded w-1/5 mt-1"></div>
+        </div>
+        <div class="h-16 bg-gray-100 rounded w-1/2 my-4"></div>
+        <div class="h-3 bg-gray-200 rounded w-1/3 mb-4"></div>
+        <div class="h-6 bg-gray-200 rounded-full w-1/3 mb-2"></div>
+        <div class="mt-5 space-y-3 border-t pt-4">
+          <div class="h-4 bg-gray-100 rounded w-full"></div>
+          <div class="h-4 bg-gray-100 rounded w-5/6"></div>
+          <div class="h-4 bg-gray-100 rounded w-full"></div>
+        </div>
+      </div>
     </div>
+    
   </div>
 
   <script>
-    // STEP 3: Firebase config (Your live project keys!) [cite: 208-220]
+    // ─────────────────────────────────────────────────────────────
+    // STEP 3: Firebase config [cite: 208-220]
+    // ─────────────────────────────────────────────────────────────
     const firebaseConfig = {
       apiKey: "AIzaSyCIuiidzKhTKrUDEIe34jeevCelWDttA3k",
       authDomain: "chaavaruthu.firebaseapp.com",
@@ -60,16 +105,24 @@
     const db = firebase.database();
     console.log('Dashboard Firebase ready!');
 
+    // ─────────────────────────────────────────────────────────────
     // STEP 4: JavaScript logic [cite: 224-393]
+    // ─────────────────────────────────────────────────────────────
     var allVolunteers = [];
 
-    // MAIN LISTENER [cite: 236-281]
     db.ref('checkins').on('value', function(snapshot) {
+      
+      // Hide the loading skeleton once data arrives [cite: 407-409]
+      var loadMsg = document.getElementById('loadingMsg');
+      if (loadMsg) loadMsg.style.display = 'none';
+
       var data = snapshot.val();
 
+      // Clear the grid and flag list before redrawing [cite: 238-241]
       document.getElementById('cardGrid').innerHTML = '<div id="emptyMsg" class="col-span-3 text-center text-gray-400 mt-16 text-lg">No check-ins yet.</div>';
       document.getElementById('flagList').innerHTML = '';
 
+      // Handle empty database [cite: 242-248]
       if (!data) {
         document.getElementById('statTotal').textContent = '0 volunteers';
         document.getElementById('statRisk').textContent  = '';
@@ -77,15 +130,19 @@
         return;
       }
 
+      // Hide the empty message [cite: 249-251]
       var emptyMsg = document.getElementById('emptyMsg');
       if (emptyMsg) emptyMsg.style.display = 'none';
 
+      // Convert Firebase object → array [cite: 252-257]
       allVolunteers = Object.entries(data).map(function(entry) {
         return Object.assign({ key: entry[0] }, entry[1]);
       });
 
+      // Sort: lowest score first [cite: 258-259]
       allVolunteers.sort(function(a, b) { return a.score - b.score; });
 
+      // Update header stats [cite: 260-267]
       var atRisk = allVolunteers.filter(function(v) {
         return v.status === 'red' || v.status === 'yellow';
       }).length;
@@ -93,6 +150,11 @@
       document.getElementById('statTotal').textContent = allVolunteers.length + ' volunteer(s)';
       document.getElementById('statRisk').textContent = atRisk > 0 ? atRisk + ' need attention ⚠️' : 'All looking good ✓';
 
+      // Polish 3: Show last update time in header [cite: 418-420]
+      var now = new Date().toLocaleTimeString();
+      document.getElementById('statRisk').textContent += '  •  Updated ' + now;
+
+      // Show/hide the Needs Attention strip [cite: 268-278]
       if (atRisk > 0) {
         document.getElementById('flagSection').classList.remove('hidden');
         allVolunteers
@@ -104,10 +166,11 @@
         document.getElementById('flagSection').classList.add('hidden');
       }
 
+      // Render all cards [cite: 279-280]
       renderCards(allVolunteers);
     });
 
-    // renderCards: draws cards into the grid [cite: 283-295]
+    // renderCards [cite: 283-295]
     function renderCards(list) {
       var grid = document.getElementById('cardGrid');
       grid.innerHTML = '';
@@ -122,7 +185,7 @@
       });
     }
 
-    // filterCards: called by the filter buttons [cite: 297-304]
+    // filterCards [cite: 297-304]
     function filterCards(status) {
       var filtered = status === 'all' 
         ? allVolunteers 
@@ -130,7 +193,7 @@
       renderCards(filtered);
     }
 
-    // makeCard: builds one volunteer card element [cite: 306-382]
+    // makeCard [cite: 306-382]
     function makeCard(v) {
       var cfg = {
         green:  { bg: 'bg-green-50', border: 'border-green-400', score: 'text-green-600', badge: 'bg-green-100 text-green-800', label: '🟢 Good to Go' },
@@ -148,7 +211,11 @@
       }
 
       var card = document.createElement('div');
-      card.className = 'rounded-2xl border-2 p-6 shadow-sm transition-all ' + c.bg + ' ' + c.border;
+      
+      // Polish 2: Highlight red cards more strongly [cite: 412-415]
+      card.className = 'rounded-2xl border-2 p-6 shadow-sm transition-all ' + 
+        c.bg + ' ' + c.border + 
+        (v.status === 'red' ? ' shadow-red-200 shadow-lg ring-2 ring-red-400' : '');
 
       card.innerHTML = `
         <div class="flex justify-between items-start mb-1">
@@ -190,7 +257,7 @@
       return card;
     }
 
-    // makeFlagBadge: pill for the Needs Attention strip [cite: 384-393]
+    // makeFlagBadge [cite: 384-393]
     function makeFlagBadge(v) {
       var pill = document.createElement('div');
       var isRed = v.status === 'red';
