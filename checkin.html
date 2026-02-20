@@ -1,102 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VolunteerFlow — Check In</title>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What's On My Plate?</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
-<body class="min-h-screen bg-purple-50 flex items-center justify-center p-4">
+<body class="min-h-screen bg-gray-50 p-6 font-sans">
 
-  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg">
+  <div class="max-w-md mx-auto bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100 p-8" id="mainCard">
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">What's on your plate?</h1>
+    <p class="text-sm text-gray-500 mb-6">See what's filling your week before you say yes to anything else.</p>
 
-    <h1 class="text-3xl font-bold text-purple-700 mb-1">How are you doing? 💜</h1>
-    <p class="text-gray-400 mb-8 text-sm">Honest answers help your coordinator support you.</p>
-
-    <label class="block font-semibold text-gray-600 mb-1">Your First Name</label>
-    <input id="vol-name" type="text" placeholder="e.g. Priya"
-      class="w-full border-2 border-gray-200 rounded-xl p-3 mb-8 focus:outline-none focus:border-purple-400" />
-
-    <div class="mb-7">
-      <div class="flex justify-between items-center mb-1">
-        <label class="font-semibold text-gray-700">Energy Level</label>
-        <span id="energyDisplay" class="text-2xl font-black text-purple-600">3</span>
-      </div>
-      <div class="flex justify-between text-xs text-gray-400 mb-1">
-        <span>😴 Empty</span><span>⚡ Full</span>
-      </div>
-      <input id="energy" type="range" min="1" max="5" value="3" class="w-full accent-purple-600 cursor-pointer" />
+    <div class="flex justify-center mb-8 relative">
+      <div class="absolute inset-0 rounded-full border-4 border-gray-100" style="width: 200px; height: 200px; left: 50%; transform: translateX(-50%);"></div>
+      <div id="plate-viz"></div>
     </div>
 
-    <div class="mb-7">
-      <div class="flex justify-between items-center mb-1">
-        <label class="font-semibold text-gray-700">Emotional Load</label>
-        <span id="emotionalDisplay" class="text-2xl font-black text-purple-600">3</span>
+    <div class="space-y-4 mb-8">
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Your Name</label>
+        <input type="text" id="volName" class="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. Priya">
       </div>
-      <div class="flex justify-between text-xs text-gray-400 mb-1">
-        <span>😔 Very heavy</span><span>😊 Light</span>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Total Comfortable Capacity (Hours)</label>
+        <input type="number" id="baseCap" value="10" class="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-blue-500">
       </div>
-      <input id="emotional" type="range" min="1" max="5" value="3" class="w-full accent-purple-600 cursor-pointer" />
+      
+      <p class="text-sm font-semibold text-gray-700 pt-4 border-t">Tag your hours this week:</p>
+      
+      <div class="flex items-center justify-between p-3 bg-orange-50 rounded-xl">
+        <span class="flex items-center gap-2 font-medium"><span class="w-3 h-3 rounded-full bg-[#F4A261]"></span> 🔥 Energizing</span>
+        <input type="number" id="eHrs" value="0" min="0" class="w-20 p-2 text-center rounded-lg border-none">
+      </div>
+      <div class="flex items-center justify-between p-3 bg-green-50 rounded-xl">
+        <span class="flex items-center gap-2 font-medium"><span class="w-3 h-3 rounded-full bg-[#A8C5A0]"></span> 😐 Neutral</span>
+        <input type="number" id="nHrs" value="0" min="0" class="w-20 p-2 text-center rounded-lg border-none">
+      </div>
+      <div class="flex items-center justify-between p-3 bg-slate-100 rounded-xl">
+        <span class="flex items-center gap-2 font-medium"><span class="w-3 h-3 rounded-full bg-[#6B7FA3]"></span> 🪨 Draining</span>
+        <input type="number" id="dHrs" value="0" min="0" class="w-20 p-2 text-center rounded-lg border-none">
+      </div>
+      
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mt-4 mb-1">Notes (Optional)</label>
+        <input type="text" id="volNote" class="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. Covering for Jake again">
+      </div>
     </div>
 
-    <div class="mb-7">
-      <div class="flex justify-between items-center mb-1">
-        <label class="font-semibold text-gray-700">Hours Available This Week</label>
-        <span id="hoursDisplay" class="text-2xl font-black text-purple-600">3</span>
-      </div>
-      <div class="flex justify-between text-xs text-gray-400 mb-1">
-        <span>⏱ Under 1 hr</span><span>🕐 5+ hrs</span>
-      </div>
-      <input id="hours" type="range" min="1" max="5" value="3" class="w-full accent-purple-600 cursor-pointer" />
-    </div>
-
-    <div class="mb-7">
-      <div class="flex justify-between items-center mb-1">
-        <label class="font-semibold text-gray-700">Stress Level</label>
-        <span id="stressDisplay" class="text-2xl font-black text-purple-600">3</span>
-      </div>
-      <div class="flex justify-between text-xs text-gray-400 mb-1">
-        <span>😤 Very stressed</span><span>😌 Calm</span>
-      </div>
-      <input id="stress" type="range" min="1" max="5" value="3" class="w-full accent-purple-600 cursor-pointer" />
-    </div>
-
-    <label class="block font-semibold text-gray-600 mb-1">
-      Anything on your mind? <span class="text-gray-400 font-normal">(optional)</span>
-    </label>
-    <textarea id="note" rows="3" placeholder="You can write anything here — this goes straight to your coordinator."
-      class="w-full border-2 border-gray-200 rounded-xl p-3 mb-8 focus:outline-none focus:border-purple-400 resize-none"></textarea>
-
-    <button id="submitBtn" onclick="submitCheckin()"
-      class="w-full bg-purple-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-purple-700 active:scale-95 transition-all">
-      Submit My Check-In
+    <button onclick="submitPlate()" class="w-full py-4 bg-blue-900 text-white font-bold rounded-2xl shadow-md hover:bg-blue-800 transition-all text-lg">
+      Lock in my plate
     </button>
+  </div>
 
-    <div id="errorMsg" class="hidden mt-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-center text-sm">
-      Please enter your name before submitting.
+  <div class="max-w-md mx-auto bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100 p-8 hidden" id="receiptCard">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Capacity Receipt</h2>
+    <p id="receiptText" class="text-lg text-gray-600 mb-6 leading-relaxed"></p>
+    <div class="p-4 bg-gray-50 rounded-xl italic text-gray-500 text-sm mb-6">
+      "This week: full-bodied and heavy, with strong notes of administration..."
     </div>
-    <div id="successMsg" class="hidden mt-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl text-center">
-      <p class="text-2xl mb-1">💜</p>
-      <p class="font-bold">Thank you! Your check-in was recorded.</p>
-      <p class="text-sm text-gray-400 mt-1">Your coordinator will be able to see how you're doing.</p>
-    </div>
-
-    <div class="mt-8 text-center">
-      <a href="dashboard.html" class="text-purple-400 text-sm hover:text-purple-600 underline">
-        Coordinator? View the dashboard →
-      </a>
-    </div>
-
+    <button onclick="location.reload()" class="w-full py-3 border-2 border-blue-900 text-blue-900 font-bold rounded-xl hover:bg-gray-50 transition-all">
+      Start Over
+    </button>
   </div>
 
   <script>
-    // ─────────────────────────────────────────────────────────────
-    // PART 1: Firebase Configuration
-    // ─────────────────────────────────────────────────────────────
+    // 1. YOUR FIREBASE CONFIGURATION
     const firebaseConfig = {
       apiKey: "AIzaSyCIuiidzKhTKrUDEIe34jeevCelWDttA3k",
       authDomain: "chaavaruthu.firebaseapp.com",
@@ -104,97 +76,84 @@
       projectId: "chaavaruthu",
       storageBucket: "chaavaruthu.firebasestorage.app",
       messagingSenderId: "21044301735",
-      appId: "1:21044301735:web:c81aa40d29446dc37e7082"
+      appId: "1:21044301735:web:c81aa40d29446dc37e7082",
+      measurementId: "G-18BY8VY06N"
     };
-
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    console.log('Firebase ready!');
 
-    // ─────────────────────────────────────────────────────────────
-    // PART 2: Live slider display with dynamic colors
-    // ─────────────────────────────────────────────────────────────
-    var sliders = ['energy', 'emotional', 'hours', 'stress'];
+    // 2. D3.js Plate Visualization
+    const width = 200, height = 200, radius = Math.min(width, height) / 2;
+    const svg = d3.select("#plate-viz").append("svg")
+      .attr("width", width).attr("height", height)
+      .append("g").attr("transform", `translate(${width/2},${height/2})`);
 
-    sliders.forEach(function(id) {
-      var slider  = document.getElementById(id);
-      var display = document.getElementById(id + 'Display');
+    const color = d3.scaleOrdinal()
+      .domain(["Energizing", "Neutral", "Draining"])
+      .range(["#F4A261", "#A8C5A0", "#6B7FA3"]); // Core emotional colors
 
-      function updateColour() {
-        var val = parseInt(slider.value);
-        display.textContent = val;
+    const pie = d3.pie().value(d => d.value).sort(null);
+    const arc = d3.arc().innerRadius(0).outerRadius(radius - 10);
 
-        // Colour the number based on value (1=red, 3=yellow, 5=green)
-        if      (val >= 4) { display.className = 'text-2xl font-black text-green-500';  }
-        else if (val >= 3) { display.className = 'text-2xl font-black text-yellow-500'; }
-        else               { display.className = 'text-2xl font-black text-red-500'; }
-      }
+    function updatePlate() {
+      const e = parseFloat(document.getElementById('eHrs').value) || 0;
+      const n = parseFloat(document.getElementById('nHrs').value) || 0;
+      const d = parseFloat(document.getElementById('dHrs').value) || 0;
+      
+      const data = [
+        {label: "Energizing", value: e},
+        {label: "Neutral", value: n},
+        {label: "Draining", value: d}
+      ];
 
-      slider.addEventListener('input', updateColour);
-      updateColour(); // set initial colour on page load
+      const drawData = (e+n+d === 0) ? [{label: "Empty", value: 1}] : data;
+      const arcData = pie(drawData);
+
+      svg.selectAll("path").data(arcData)
+        .join("path")
+        .attr("d", arc)
+        .attr("fill", d => d.data.label === "Empty" ? "#f3f4f6" : color(d.data.label))
+        .transition().duration(500);
+    }
+
+    ['eHrs', 'nHrs', 'dHrs'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updatePlate);
     });
+    updatePlate();
 
-    // ─────────────────────────────────────────────────────────────
-    // PART 3: submitCheckin Logic
-    // ─────────────────────────────────────────────────────────────
-    function submitCheckin() {
-      // 1. Read all values from the form
-      var name      = document.getElementById('vol-name').value.trim();
-      var energy    = parseInt(document.getElementById('energy').value);
-      var emotional = parseInt(document.getElementById('emotional').value);
-      var hours     = parseInt(document.getElementById('hours').value);
-      var stress    = parseInt(document.getElementById('stress').value);
-      var note      = document.getElementById('note').value.trim();
+    // 3. Submit Logic
+    function submitPlate() {
+      const name = document.getElementById('volName').value || "Anonymous";
+      const baseCap = parseFloat(document.getElementById('baseCap').value) || 10;
+      const eHrs = parseFloat(document.getElementById('eHrs').value) || 0;
+      const nHrs = parseFloat(document.getElementById('nHrs').value) || 0;
+      const dHrs = parseFloat(document.getElementById('dHrs').value) || 0;
+      const note = document.getElementById('volNote').value;
 
-      // 2. Validate — don't allow empty name
-      if (name === '') {
-        document.getElementById('errorMsg').classList.remove('hidden');
-        return;
-      }
-      document.getElementById('errorMsg').classList.add('hidden');
+      // Calculate weighted load for the receipt
+      const weightedLoad = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
+      const remaining = (baseCap - weightedLoad).toFixed(1);
 
-      // 3. Replace spaces so the name works as a Firebase path
-      var safeName = name.replace(/ /g, '_');
-
-      // 4. Calculate burnout score (0–100)
-      var rawScore = energy + emotional + hours + (6 - stress);
-      var score    = Math.round((rawScore / 20) * 100);
-
-      // 5. Determine status from score
-      var status;
-      if      (score >= 70) { status = 'green';  }
-      else if (score >= 40) { status = 'yellow'; }
-      else                  { status = 'red'; }
-
-      // 6. Disable button while saving
-      var btn = document.getElementById('submitBtn');
-      btn.disabled = true;
-      btn.textContent = 'Saving...';
-
-      // 7. Save to Firebase
-      db.ref('checkins/' + safeName).set({
-        name:      name,
-        energy:    energy,
-        emotional: emotional,
-        hours:     hours,
-        stress:    stress,
-        note:      note,
-        score:     score,
-        status:    status,
-        timestamp: Date.now()
-      })
-      .then(function() {
-        // 8. On success — show thank you message
-        document.getElementById('successMsg').classList.remove('hidden');
-        btn.textContent = 'Submitted ✓';
-      })
-      .catch(function(err) {
-        // 9. On error
-        console.error('Save failed:', err);
-        alert('Something went wrong. Open F12 → Console for details.');
-        btn.disabled   = false;
-        btn.textContent = 'Submit My Check-In';
+      db.ref('checkins/' + name).set({
+        name: name,
+        base_capacity: baseCap,
+        energizing_hrs: eHrs,
+        neutral_hrs: nHrs,
+        draining_hrs: dHrs,
+        note: note,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      }).then(() => {
+        // Show Capacity Receipt
+        document.getElementById('mainCard').classList.add('hidden');
+        document.getElementById('receiptCard').classList.remove('hidden');
+        
+        let receiptHtml = `Your plate carries a weighted load of <strong>${weightedLoad.toFixed(1)} / ${baseCap}</strong>. <br><br>`;
+        if (remaining > 0) {
+          receiptHtml += `You have roughly <strong>${remaining} hours</strong> of comfortable capacity left.`;
+        } else {
+          receiptHtml += `Your plate is <strong>overflowing</strong>. It's time to redistribute tasks.`;
+        }
+        document.getElementById('receiptText').innerHTML = receiptHtml;
       });
     }
   </script>
