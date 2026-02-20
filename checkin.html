@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VolunteerFlow — Check In</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+</head>
+<body class="min-h-screen bg-purple-50 flex items-center justify-center p-4">
+
+  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg">
+
+    <h1 class="text-3xl font-bold text-purple-700 mb-1">How are you doing? 💜</h1>
+    <p class="text-gray-400 mb-8 text-sm">Honest answers help your coordinator support you.</p>
+
+    <label class="block font-semibold text-gray-600 mb-1">Your First Name</label>
+    <input id="vol-name" type="text" placeholder="e.g. Priya"
+      class="w-full border-2 border-gray-200 rounded-xl p-3 mb-8 focus:outline-none focus:border-purple-400" />
+
+    <div class="mb-7">
+      <div class="flex justify-between items-center mb-1">
+        <label class="font-semibold text-gray-700">Energy Level</label>
+        <span id="energyDisplay" class="text-2xl font-black text-purple-600">3</span>
+      </div>
+      <div class="flex justify-between text-xs text-gray-400 mb-1">
+        <span>😴 Empty</span><span>⚡ Full</span>
+      </div>
+      <input id="energy" type="range" min="1" max="5" value="3" class="w-full accent-purple-600 cursor-pointer" />
+    </div>
+
+    <div class="mb-7">
+      <div class="flex justify-between items-center mb-1">
+        <label class="font-semibold text-gray-700">Emotional Load</label>
+        <span id="emotionalDisplay" class="text-2xl font-black text-purple-600">3</span>
+      </div>
+      <div class="flex justify-between text-xs text-gray-400 mb-1">
+        <span>😔 Very heavy</span><span>😊 Light</span>
+      </div>
+      <input id="emotional" type="range" min="1" max="5" value="3" class="w-full accent-purple-600 cursor-pointer" />
+    </div>
+
+    <div class="mb-7">
+      <div class="flex justify-between items-center mb-1">
+        <label class="font-semibold text-gray-700">Hours Available This Week</label>
+        <span id="hoursDisplay" class="text-2xl font-black text-purple-600">3</span>
+      </div>
+      <div class="flex justify-between text-xs text-gray-400 mb-1">
+        <span>⏱ Under 1 hr</span><span>🕐 5+ hrs</span>
+      </div>
+      <input id="hours" type="range" min="1" max="5" value="3" class="w-full accent-purple-600 cursor-pointer" />
+    </div>
+
+    <div class="mb-7">
+      <div class="flex justify-between items-center mb-1">
+        <label class="font-semibold text-gray-700">Stress Level</label>
+        <span id="stressDisplay" class="text-2xl font-black text-purple-600">3</span>
+      </div>
+      <div class="flex justify-between text-xs text-gray-400 mb-1">
+        <span>😤 Very stressed</span><span>😌 Calm</span>
+      </div>
+      <input id="stress" type="range" min="1" max="5" value="3" class="w-full accent-purple-600 cursor-pointer" />
+    </div>
+
+    <label class="block font-semibold text-gray-600 mb-1">
+      Anything on your mind? <span class="text-gray-400 font-normal">(optional)</span>
+    </label>
+    <textarea id="note" rows="3" placeholder="You can write anything here — this goes straight to your coordinator."
+      class="w-full border-2 border-gray-200 rounded-xl p-3 mb-8 focus:outline-none focus:border-purple-400 resize-none"></textarea>
+
+    <button id="submitBtn" onclick="submitCheckin()"
+      class="w-full bg-purple-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-purple-700 active:scale-95 transition-all">
+      Submit My Check-In
+    </button>
+
+    <div id="errorMsg" class="hidden mt-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-center text-sm">
+      Please enter your name before submitting.
+    </div>
+    <div id="successMsg" class="hidden mt-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl text-center">
+      <p class="text-2xl mb-1">💜</p>
+      <p class="font-bold">Thank you! Your check-in was recorded.</p>
+      <p class="text-sm text-gray-400 mt-1">Your coordinator will be able to see how you're doing.</p>
+    </div>
+
+    <div class="mt-8 text-center">
+      <a href="dashboard.html" class="text-purple-400 text-sm hover:text-purple-600 underline">
+        Coordinator? View the dashboard →
+      </a>
+    </div>
+
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────────────────────
+    // PART 1: Firebase Configuration
+    // ─────────────────────────────────────────────────────────────
+    const firebaseConfig = {
+      apiKey: "AIzaSyCIuiidzKhTKrUDEIe34jeevCelWDttA3k",
+      authDomain: "chaavaruthu.firebaseapp.com",
+      databaseURL: "https://chaavaruthu-default-rtdb.firebaseio.com",
+      projectId: "chaavaruthu",
+      storageBucket: "chaavaruthu.firebasestorage.app",
+      messagingSenderId: "21044301735",
+      appId: "1:21044301735:web:c81aa40d29446dc37e7082"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    console.log('Firebase ready!');
+
+    // ─────────────────────────────────────────────────────────────
+    // PART 2: Live slider display with dynamic colors
+    // ─────────────────────────────────────────────────────────────
+    var sliders = ['energy', 'emotional', 'hours', 'stress'];
+
+    sliders.forEach(function(id) {
+      var slider  = document.getElementById(id);
+      var display = document.getElementById(id + 'Display');
+
+      function updateColour() {
+        var val = parseInt(slider.value);
+        display.textContent = val;
+
+        // Colour the number based on value (1=red, 3=yellow, 5=green)
+        if      (val >= 4) { display.className = 'text-2xl font-black text-green-500';  }
+        else if (val >= 3) { display.className = 'text-2xl font-black text-yellow-500'; }
+        else               { display.className = 'text-2xl font-black text-red-500'; }
+      }
+
+      slider.addEventListener('input', updateColour);
+      updateColour(); // set initial colour on page load
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // PART 3: submitCheckin Logic
+    // ─────────────────────────────────────────────────────────────
+    function submitCheckin() {
+      // 1. Read all values from the form
+      var name      = document.getElementById('vol-name').value.trim();
+      var energy    = parseInt(document.getElementById('energy').value);
+      var emotional = parseInt(document.getElementById('emotional').value);
+      var hours     = parseInt(document.getElementById('hours').value);
+      var stress    = parseInt(document.getElementById('stress').value);
+      var note      = document.getElementById('note').value.trim();
+
+      // 2. Validate — don't allow empty name
+      if (name === '') {
+        document.getElementById('errorMsg').classList.remove('hidden');
+        return;
+      }
+      document.getElementById('errorMsg').classList.add('hidden');
+
+      // 3. Replace spaces so the name works as a Firebase path
+      var safeName = name.replace(/ /g, '_');
+
+      // 4. Calculate burnout score (0–100)
+      var rawScore = energy + emotional + hours + (6 - stress);
+      var score    = Math.round((rawScore / 20) * 100);
+
+      // 5. Determine status from score
+      var status;
+      if      (score >= 70) { status = 'green';  }
+      else if (score >= 40) { status = 'yellow'; }
+      else                  { status = 'red'; }
+
+      // 6. Disable button while saving
+      var btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      // 7. Save to Firebase
+      db.ref('checkins/' + safeName).set({
+        name:      name,
+        energy:    energy,
+        emotional: emotional,
+        hours:     hours,
+        stress:    stress,
+        note:      note,
+        score:     score,
+        status:    status,
+        timestamp: Date.now()
+      })
+      .then(function() {
+        // 8. On success — show thank you message
+        document.getElementById('successMsg').classList.remove('hidden');
+        btn.textContent = 'Submitted ✓';
+      })
+      .catch(function(err) {
+        // 9. On error
+        console.error('Save failed:', err);
+        alert('Something went wrong. Open F12 → Console for details.');
+        btn.disabled   = false;
+        btn.textContent = 'Submit My Check-In';
+      });
+    }
+  </script>
+</body>
+</html>
