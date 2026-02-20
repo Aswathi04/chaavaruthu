@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VolunteerFlow — Dashboard</title>
-
+  <title>VolunteerFlow — Capacity Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
@@ -15,7 +13,7 @@
   <div class="bg-blue-900 text-white px-8 py-5 flex justify-between items-center shadow-lg">
     <div>
       <h1 class="text-2xl font-bold tracking-tight">VolunteerFlow</h1>
-      <p class="text-blue-300 text-sm mt-0.5">Coordinator Dashboard — Live</p>
+      <p class="text-blue-300 text-sm mt-0.5">Coordinator Capacity Dashboard — Live</p>
     </div>
     <div class="text-right">
       <p id="statTotal" class="font-semibold text-lg">Loading...</p>
@@ -24,73 +22,26 @@
   </div>
 
   <div id="flagSection" class="hidden bg-red-50 border-b-2 border-red-200 px-8 py-4">
-    <p class="font-bold text-red-700 mb-3">⚠️ Needs Attention</p>
+    <p class="font-bold text-red-700 mb-3">⚠️ Over capacity - Redistribute to protect capacity</p>
     <div id="flagList" class="flex flex-wrap gap-2"></div>
   </div>
 
   <div class="px-8 pt-6 pb-2 flex gap-3">
-    <button onclick="filterCards('all')" class="px-4 py-2 rounded-full bg-blue-800 text-white text-sm font-semibold hover:bg-blue-900" id="btn-all">All</button>
-    <button onclick="filterCards('red')" class="px-4 py-2 rounded-full bg-red-100 text-red-700 text-sm font-semibold hover:bg-red-200" id="btn-red">🔴 At Risk</button>
-    <button onclick="filterCards('yellow')" class="px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-semibold hover:bg-yellow-200" id="btn-yellow">🟡 Check In</button>
-    <button onclick="filterCards('green')" class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-semibold hover:bg-green-200" id="btn-green">🟢 Good</button>
+    <button onclick="filterCards('all')" class="px-4 py-2 rounded-full bg-blue-800 text-white text-sm font-semibold hover:bg-blue-900">All Plates</button>
+    <button onclick="filterCards('red')" class="px-4 py-2 rounded-full bg-red-100 text-red-700 text-sm font-semibold hover:bg-red-200">🔴 Overloaded</button>
+    <button onclick="filterCards('yellow')" class="px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-semibold hover:bg-yellow-200">🟡 Nearing Capacity</button>
+    <button onclick="filterCards('green')" class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-semibold hover:bg-green-200">🟢 Balanced</button>
     <a href="checkin.html" class="ml-auto px-4 py-2 rounded-full border border-blue-300 text-blue-700 text-sm hover:bg-blue-50">
-      → Volunteer check-in form
+      → View Volunteer Plate
     </a>
   </div>
 
   <div id="cardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 px-8 py-4">
-    
-    <div id="loadingMsg" class="col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-      <div class="rounded-2xl border-2 border-gray-100 p-6 bg-white animate-pulse shadow-sm">
-        <div class="flex justify-between items-start mb-1">
-          <div class="h-6 bg-gray-200 rounded w-1/3"></div>
-          <div class="h-3 bg-gray-100 rounded w-1/4 mt-1"></div>
-        </div>
-        <div class="h-16 bg-gray-100 rounded w-1/2 my-4"></div>
-        <div class="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
-        <div class="h-6 bg-gray-200 rounded-full w-1/3 mb-2"></div>
-        <div class="mt-5 space-y-3 border-t pt-4">
-          <div class="h-4 bg-gray-100 rounded w-full"></div>
-          <div class="h-4 bg-gray-100 rounded w-5/6"></div>
-          <div class="h-4 bg-gray-100 rounded w-full"></div>
-        </div>
-      </div>
-      <div class="rounded-2xl border-2 border-gray-100 p-6 bg-white animate-pulse shadow-sm hidden sm:block delay-75">
-        <div class="flex justify-between items-start mb-1">
-          <div class="h-6 bg-gray-200 rounded w-1/2"></div>
-          <div class="h-3 bg-gray-100 rounded w-1/4 mt-1"></div>
-        </div>
-        <div class="h-16 bg-gray-100 rounded w-1/3 my-4"></div>
-        <div class="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
-        <div class="h-6 bg-gray-200 rounded-full w-1/4 mb-2"></div>
-        <div class="mt-5 space-y-3 border-t pt-4">
-          <div class="h-4 bg-gray-100 rounded w-11/12"></div>
-          <div class="h-4 bg-gray-100 rounded w-full"></div>
-          <div class="h-4 bg-gray-100 rounded w-4/5"></div>
-        </div>
-      </div>
-      <div class="rounded-2xl border-2 border-gray-100 p-6 bg-white animate-pulse shadow-sm hidden lg:block delay-150">
-        <div class="flex justify-between items-start mb-1">
-          <div class="h-6 bg-gray-200 rounded w-1/3"></div>
-          <div class="h-3 bg-gray-100 rounded w-1/5 mt-1"></div>
-        </div>
-        <div class="h-16 bg-gray-100 rounded w-1/2 my-4"></div>
-        <div class="h-3 bg-gray-200 rounded w-1/3 mb-4"></div>
-        <div class="h-6 bg-gray-200 rounded-full w-1/3 mb-2"></div>
-        <div class="mt-5 space-y-3 border-t pt-4">
-          <div class="h-4 bg-gray-100 rounded w-full"></div>
-          <div class="h-4 bg-gray-100 rounded w-5/6"></div>
-          <div class="h-4 bg-gray-100 rounded w-full"></div>
-        </div>
-      </div>
-    </div>
-    
+    <div id="loadingMsg" class="col-span-3 text-center mt-16 text-gray-400">Loading capacity data...</div>
   </div>
 
   <script>
-    // ─────────────────────────────────────────────────────────────
-    // STEP 3: Firebase config [cite: 208-220]
-    // ─────────────────────────────────────────────────────────────
+    // 1. YOUR FIREBASE CONFIGURATION
     const firebaseConfig = {
       apiKey: "AIzaSyCIuiidzKhTKrUDEIe34jeevCelWDttA3k",
       authDomain: "chaavaruthu.firebaseapp.com",
@@ -98,172 +49,137 @@
       projectId: "chaavaruthu",
       storageBucket: "chaavaruthu.firebasestorage.app",
       messagingSenderId: "21044301735",
-      appId: "1:21044301735:web:c81aa40d29446dc37e7082"
+      appId: "1:21044301735:web:c81aa40d29446dc37e7082",
+      measurementId: "G-18BY8VY06N"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    console.log('Dashboard Firebase ready!');
 
-    // ─────────────────────────────────────────────────────────────
-    // STEP 4: JavaScript logic [cite: 224-393]
-    // ─────────────────────────────────────────────────────────────
     var allVolunteers = [];
 
+    // 2. MAIN LOGIC LISTENER
     db.ref('checkins').on('value', function(snapshot) {
-      
-      // Hide the loading skeleton once data arrives [cite: 407-409]
-      var loadMsg = document.getElementById('loadingMsg');
-      if (loadMsg) loadMsg.style.display = 'none';
-
+      document.getElementById('loadingMsg').style.display = 'none';
       var data = snapshot.val();
-
-      // Clear the grid and flag list before redrawing [cite: 238-241]
-      document.getElementById('cardGrid').innerHTML = '<div id="emptyMsg" class="col-span-3 text-center text-gray-400 mt-16 text-lg">No check-ins yet.</div>';
+      
+      document.getElementById('cardGrid').innerHTML = '<div id="emptyMsg" class="col-span-3 text-center text-gray-400 mt-16 text-lg">No plates submitted yet.</div>';
       document.getElementById('flagList').innerHTML = '';
 
-      // Handle empty database [cite: 242-248]
-      if (!data) {
-        document.getElementById('statTotal').textContent = '0 volunteers';
-        document.getElementById('statRisk').textContent  = '';
-        document.getElementById('flagSection').classList.add('hidden');
-        return;
-      }
+      if (!data) return;
+      document.getElementById('emptyMsg').style.display = 'none';
 
-      // Hide the empty message [cite: 249-251]
-      var emptyMsg = document.getElementById('emptyMsg');
-      if (emptyMsg) emptyMsg.style.display = 'none';
-
-      // Convert Firebase object → array [cite: 252-257]
       allVolunteers = Object.entries(data).map(function(entry) {
-        return Object.assign({ key: entry[0] }, entry[1]);
+        var v = Object.assign({ key: entry[0] }, entry[1]);
+        
+        // Weighted Capacity Formula 
+        var eHrs = parseFloat(v.energizing_hrs) || 0;
+        var nHrs = parseFloat(v.neutral_hrs) || 0;
+        var dHrs = parseFloat(v.draining_hrs) || 0;
+        var capacity = parseFloat(v.base_capacity) || 10; 
+        
+        v.weighted_load = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
+        v.load_ratio = v.weighted_load / capacity;
+
+        // Overflow State logic [cite: 494, 495]
+        if (v.load_ratio >= 1.0) { v.status = 'red'; }
+        else if (v.load_ratio >= 0.75) { v.status = 'yellow'; }
+        else { v.status = 'green'; }
+
+        return v;
       });
 
-      // Sort: lowest score first [cite: 258-259]
-      allVolunteers.sort(function(a, b) { return a.score - b.score; });
+      allVolunteers.sort((a, b) => b.load_ratio - a.load_ratio);
 
-      // Update header stats [cite: 260-267]
-      var atRisk = allVolunteers.filter(function(v) {
-        return v.status === 'red' || v.status === 'yellow';
-      }).length;
-
+      var atRisk = allVolunteers.filter(v => v.status === 'red' || v.status === 'yellow').length;
       document.getElementById('statTotal').textContent = allVolunteers.length + ' volunteer(s)';
-      document.getElementById('statRisk').textContent = atRisk > 0 ? atRisk + ' need attention ⚠️' : 'All looking good ✓';
+      document.getElementById('statRisk').textContent = atRisk > 0 ? atRisk + ' plates near overflow ⚠️' : 'All plates balanced ✓';
 
-      // Polish 3: Show last update time in header [cite: 418-420]
-      var now = new Date().toLocaleTimeString();
-      document.getElementById('statRisk').textContent += '  •  Updated ' + now;
-
-      // Show/hide the Needs Attention strip [cite: 268-278]
       if (atRisk > 0) {
         document.getElementById('flagSection').classList.remove('hidden');
-        allVolunteers
-          .filter(function(v) { return v.status === 'red' || v.status === 'yellow'; })
-          .forEach(function(v) {
+        allVolunteers.filter(v => v.status === 'red' || v.status === 'yellow').forEach(v => {
             document.getElementById('flagList').appendChild(makeFlagBadge(v));
-          });
+        });
       } else {
         document.getElementById('flagSection').classList.add('hidden');
       }
 
-      // Render all cards [cite: 279-280]
       renderCards(allVolunteers);
     });
 
-    // renderCards [cite: 283-295]
     function renderCards(list) {
       var grid = document.getElementById('cardGrid');
       grid.innerHTML = '';
-
-      if (list.length === 0) {
-        grid.innerHTML = '<p class="col-span-3 text-center text-gray-400 mt-8">No volunteers match this filter.</p>';
-        return;
-      }
-
-      list.forEach(function(v) {
-        grid.appendChild(makeCard(v));
-      });
+      list.forEach(v => grid.appendChild(makeCard(v)));
     }
 
-    // filterCards [cite: 297-304]
     function filterCards(status) {
-      var filtered = status === 'all' 
-        ? allVolunteers 
-        : allVolunteers.filter(function(v) { return v.status === status; });
+      var filtered = status === 'all' ? allVolunteers : allVolunteers.filter(v => v.status === status);
       renderCards(filtered);
     }
 
-    // makeCard [cite: 306-382]
+    // 3. GENERATE CARDS & MINI-PLATES 
     function makeCard(v) {
       var cfg = {
-        green:  { bg: 'bg-green-50', border: 'border-green-400', score: 'text-green-600', badge: 'bg-green-100 text-green-800', label: '🟢 Good to Go' },
-        yellow: { bg: 'bg-yellow-50', border: 'border-yellow-400', score: 'text-yellow-600', badge: 'bg-yellow-100 text-yellow-800', label: '🟡 Check In' },
-        red:    { bg: 'bg-red-50', border: 'border-red-500', score: 'text-red-600', badge: 'bg-red-100 text-red-800', label: '🔴 At Risk' }
+        green:  { bg: 'bg-green-50', border: 'border-green-400', badge: 'bg-green-100 text-green-800', label: '🟢 Balanced' },
+        yellow: { bg: 'bg-yellow-50', border: 'border-yellow-400', badge: 'bg-yellow-100 text-yellow-800', label: '🟡 Nearing Capacity' },
+        red:    { bg: 'bg-red-50', border: 'border-red-500', badge: 'bg-red-100 text-red-800', label: '🔴 Overloaded' }
       };
       var c = cfg[v.status] || cfg.green;
 
-      var timeAgo = 'Unknown';
-      if (v.timestamp) {
-        var diffMins = Math.floor((Date.now() - v.timestamp) / 60000);
-        if      (diffMins <  1)  { timeAgo = 'Just now'; }
-        else if (diffMins < 60)  { timeAgo = diffMins + ' min ago'; }
-        else                     { timeAgo = Math.floor(diffMins/60) + ' hr ago'; }
-      }
+      var eHrs = parseFloat(v.energizing_hrs) || 0;
+      var nHrs = parseFloat(v.neutral_hrs) || 0;
+      var dHrs = parseFloat(v.draining_hrs) || 0;
+      var total = eHrs + nHrs + dHrs;
+      
+      var ePct = total > 0 ? (eHrs / total) * 100 : 0;
+      var nPct = total > 0 ? (nHrs / total) * 100 : 0;
+      var dPct = total > 0 ? (dHrs / total) * 100 : 0;
+
+      // Dynamic CSS Conic Gradient using exact emotional colors [cite: 483-487]
+      var gradient = `conic-gradient(
+        #F4A261 0% ${ePct}%, 
+        #A8C5A0 ${ePct}% ${ePct + nPct}%, 
+        #6B7FA3 ${ePct + nPct}% 100%
+      )`;
 
       var card = document.createElement('div');
-      
-      // Polish 2: Highlight red cards more strongly [cite: 412-415]
-      card.className = 'rounded-2xl border-2 p-6 shadow-sm transition-all ' + 
-        c.bg + ' ' + c.border + 
-        (v.status === 'red' ? ' shadow-red-200 shadow-lg ring-2 ring-red-400' : '');
+      card.className = 'rounded-2xl border-2 p-6 shadow-sm transition-all ' + c.bg + ' ' + c.border + (v.status === 'red' ? ' shadow-red-200 shadow-lg ring-2 ring-red-400' : '');
 
       card.innerHTML = `
-        <div class="flex justify-between items-start mb-1">
-          <h3 class="font-bold text-xl text-gray-800">${v.name || v.key}</h3>
-          <span class="text-xs text-gray-400 mt-1">${timeAgo}</span>
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <h3 class="font-bold text-xl text-gray-800">${v.name || v.key}</h3>
+            <span class="inline-block px-2 py-1 mt-2 rounded text-xs font-semibold ${c.badge}">${c.label}</span>
+          </div>
+          <div class="w-16 h-16 rounded-full shadow-inner border-2 border-gray-200" style="background: ${gradient};"></div>
         </div>
 
-        <div class="${c.score} text-6xl font-black my-4 leading-none">${v.score}</div>
-        <p class="text-gray-400 text-xs mb-4">Bandwidth Score (0–100)</p>
+        <div class="text-3xl font-black text-gray-800 my-2 leading-none">${v.weighted_load.toFixed(1)} <span class="text-lg text-gray-400 font-normal">/ ${v.base_capacity} hrs</span></div>
+        <p class="text-gray-500 text-xs mb-4 font-semibold uppercase tracking-wide">Energy Budget</p>
 
-        <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ${c.badge}">
-          ${c.label}
-        </span>
-
-        <div class="mt-5 space-y-2 text-sm text-gray-600 border-t pt-4">
-          <div class="flex justify-between">
-            <span>⚡ Energy</span>
-            <span class="font-semibold">${v.energy}/5</span>
+        <div class="mt-4 space-y-2 text-sm text-gray-600 border-t pt-4">
+          <div class="flex justify-between items-center">
+            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#F4A261]"></span> 🔥 Energizing</span>
+            <span class="font-semibold">${eHrs} hrs</span>
           </div>
-          <div class="flex justify-between">
-            <span>💙 Emotional load</span>
-            <span class="font-semibold">${v.emotional}/5</span>
+          <div class="flex justify-between items-center">
+            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#A8C5A0]"></span> 😐 Neutral</span>
+            <span class="font-semibold">${nHrs} hrs</span>
           </div>
-          <div class="flex justify-between">
-            <span>🕐 Hours available</span>
-            <span class="font-semibold">${v.hours}/5</span>
-          </div>
-          <div class="flex justify-between">
-            <span>😌 Calm level</span>
-            <span class="font-semibold">${v.stress}/5</span>
+          <div class="flex justify-between items-center">
+            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#6B7FA3]"></span> 🪨 Draining</span>
+            <span class="font-semibold">${dHrs} hrs</span>
           </div>
         </div>
-
-        ${v.note 
-          ? `<p class="mt-4 text-sm italic text-gray-500 bg-white rounded-xl p-3 border">"${v.note}"</p>` 
-          : ''
-        }
       `;
       return card;
     }
 
-    // makeFlagBadge [cite: 384-393]
     function makeFlagBadge(v) {
       var pill = document.createElement('div');
       var isRed = v.status === 'red';
-      pill.className = 'px-4 py-1.5 rounded-full text-sm font-bold cursor-pointer ' + 
-                       (isRed ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800');
-      pill.textContent = (isRed ? '🔴 ' : '🟡 ') + (v.name || v.key) + '  (' + v.score + ')'  ;
+      pill.className = 'px-4 py-1.5 rounded-full text-sm font-bold cursor-pointer ' + (isRed ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800');
+      pill.textContent = (isRed ? '🔴 ' : '🟡 ') + (v.name || v.key) + ' (Load: ' + v.weighted_load.toFixed(1) + ')';
       return pill;
     }
   </script>
