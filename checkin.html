@@ -220,6 +220,10 @@
       
       <div id="calendar-grid" class="calendar-grid"></div>
     </div>
+    
+    <div style="text-align: center; margin-top: 60px; padding-top: 20px; border-top: 1px solid #EEE;">
+      <button onclick="generateDemoHistory()" style="background: #EEE; color: #999; padding: 6px 12px; font-size: 11px; border-radius: 4px;">🛠️ Hackathon Demo: Inject 4 Weeks of History</button>
+    </div>
 
   </div>
 
@@ -269,6 +273,7 @@
     async function init() {
       document.getElementById('greeting').innerText = `Hey ${volunteerId}`;
       
+      // Load Profile
       db.ref(`volunteers/${volunteerId}/profile/capacityThreshold`).once('value', snap => {
         if (snap.exists()) {
           capacityThreshold = snap.val();
@@ -276,6 +281,7 @@
         }
       });
 
+      // Load Autocomplete
       db.ref(`volunteers/${volunteerId}/autocomplete`).once('value', snap => {
         if (snap.exists()) {
           const list = document.getElementById('task-autocomplete');
@@ -288,9 +294,16 @@
         }
       });
 
-      if(tasks.length === 0) addTaskRow();
+      // FIX: Load existing tasks for THIS week if they exist!
+      const snap = await db.ref(`volunteers/${volunteerId}/weeks/${currentWeekOf}/tasks`).once('value');
+      if (snap.exists()) {
+        const data = snap.val();
+        tasks = Array.isArray(data) ? data : Object.values(data);
+        renderTasks();
+      } else {
+        if(tasks.length === 0) addTaskRow();
+      }
       
-      // Load the calendar right away
       renderCalendarGallery();
     }
 
@@ -385,7 +398,7 @@
         .append("g").attr("transform", `translate(${size/2},${size/2})`);
 
       const radius = size / 2;
-      const rimRadius = radius - (size > 100 ? 10 : 4); // Scaled padding
+      const rimRadius = radius - (size > 100 ? 10 : 4); 
 
       // Outer Rim
       svg.append("circle")
@@ -499,7 +512,7 @@
         document.getElementById('ref-comparison').innerText = "No data from last week to compare.";
       }
       
-      renderCalendarGallery(); // Refresh calendar to include new submission
+      renderCalendarGallery(); 
     }
 
     // --- CALENDAR GALLERY LOGIC ---
@@ -507,15 +520,13 @@
       const container = document.getElementById('calendar-grid');
       container.innerHTML = '';
 
-      // Fetch all past weeks for this volunteer in one call
       const snap = await db.ref(`volunteers/${volunteerId}/weeks`).once('value');
       const allWeeksData = snap.exists() ? snap.val() : {};
 
-      // Build the grid for the last 8 weeks
       for (let i = 0; i < 8; i++) {
         const d = new Date();
         const day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6:1);
-        d.setDate(diff - (i * 7)); // Walk backwards week by week
+        d.setDate(diff - (i * 7)); 
         
         const weekStr = d.toISOString().split('T')[0];
         const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -523,7 +534,6 @@
         const cell = document.createElement('div');
         cell.className = 'calendar-cell';
         
-        // Ensure unique ID for D3 container
         const svgContainerId = `cal-plate-${weekStr}`;
         cell.innerHTML = `
           <div id="${svgContainerId}" style="height: 60px; display: flex; justify-content: center; align-items: center;"></div>
@@ -532,7 +542,6 @@
         container.appendChild(cell);
 
         const weekTasksObj = allWeeksData[weekStr] ? allWeeksData[weekStr].tasks : null;
-        // Firebase might store arrays as objects with indices if keys are missing, ensure it's an array
         const weekTasks = weekTasksObj ? (Array.isArray(weekTasksObj) ? weekTasksObj : Object.values(weekTasksObj)) : [];
 
         drawPlateSVG(svgContainerId, 60, weekTasks, capacityThreshold);
@@ -550,7 +559,6 @@
     function openHistoryModal(dateStr, tasksArr) {
       document.getElementById('modal-title').innerText = `Week of ${dateStr}`;
       
-      // Calculate math for modal subtitle
       const eHrs = tasksArr.filter(t => t.tag === 'energizing').reduce((s,t) => s+t.hours, 0);
       const nHrs = tasksArr.filter(t => t.tag === 'neutral').reduce((s,t) => s+t.hours, 0);
       const dHrs = tasksArr.filter(t => t.tag === 'draining').reduce((s,t) => s+t.hours, 0);
@@ -558,7 +566,6 @@
       
       document.getElementById('modal-subtitle').innerText = `Weighted Load: ${weightedLoad.toFixed(1)} / ${capacityThreshold}`;
 
-      // Build task list HTML
       let listHtml = '';
       tasksArr.forEach(t => {
         const emoji = t.tag === 'energizing' ? '🔥' : t.tag === 'neutral' ? '😐' : '🪨';
@@ -570,11 +577,29 @@
       });
       document.getElementById('modal-task-list').innerHTML = listHtml;
 
-      // Show Modal
       document.getElementById('history-modal').classList.remove('hidden');
-
-      // Draw large plate in modal
       setTimeout(() => drawPlateSVG('modal-plate', 160, tasksArr, capacityThreshold), 10);
+    }
+
+    // --- HACKATHON DEMO MAGIC ---
+    window.generateDemoHistory = async function() {
+      const dummyData = [
+        [{ id: '1', name: "Food bank", org: "City", hours: 4, tag: "draining" }, { id: '2', name: "Emails", org: "", hours: 2, tag: "neutral" }],
+        [{ id: '3', name: "Mentoring", org: "School", hours: 3, tag: "energizing" }, { id: '4', name: "Setup", org: "", hours: 5, tag: "draining" }],
+        [{ id: '5', name: "Social Media", org: "Web", hours: 2, tag: "neutral" }, { id: '6', name: "Design", org: "Web", hours: 4, tag: "energizing" }],
+        [{ id: '7', name: "Inventory", org: "City", hours: 6, tag: "draining" }]
+      ];
+      
+      for (let i = 1; i <= 4; i++) {
+        const d = new Date();
+        const day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6:1);
+        d.setDate(diff - (i * 7));
+        const pastWeek = new Date(d).toISOString().split('T')[0];
+        
+        await db.ref(`volunteers/${volunteerId}/weeks/${pastWeek}/tasks`).set(dummyData[i-1]);
+      }
+      alert("Past 4 weeks populated! Refreshing calendar...");
+      renderCalendarGallery();
     }
 
     init();
