@@ -15,76 +15,92 @@
     input[type=number] { -moz-appearance: textfield; }
   </style>
 </head>
-<body class="min-h-screen bg-gray-50 p-6 font-sans text-gray-800">
+<body class="min-h-screen bg-purple-50 flex items-center justify-center p-4">
 
-  <div id="main-view" class="max-w-xl mx-auto bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100 p-8">
-    <div class="flex justify-between items-start mb-2">
-      <h1 class="text-2xl font-bold text-gray-800">What's on your plate?</h1>
-      <input type="text" id="volIdInput" value="Priya" class="w-24 p-1 text-sm bg-gray-100 border-none rounded text-center text-gray-500" placeholder="Volunteer ID">
+  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg">
+
+    <h1 class="text-3xl font-bold text-purple-700 mb-1">How are you doing? 💜</h1>
+    <p class="text-gray-400 mb-8 text-sm">Honest answers help your coordinator support you.</p>
+
+    <label class="block font-semibold text-gray-600 mb-1">Your First Name</label>
+    <input id="vol-name" type="text" placeholder="e.g. Priya"
+      class="w-full border-2 border-gray-200 rounded-xl p-3 mb-8 focus:outline-none focus:border-purple-400" />
+
+    <div class="mb-7">
+      <div class="flex justify-between items-center mb-1">
+        <label class="font-semibold text-gray-700">Energy Level</label>
+        <span id="energyDisplay" class="text-2xl font-black text-purple-600">3</span>
+      </div>
+      <div class="flex justify-between text-xs text-gray-400 mb-1">
+        <span>😴 Empty</span><span>⚡ Full</span>
+      </div>
+      <input id="energy" type="range" min="1" max="5" value="3" class="w-full accent-purple-600 cursor-pointer" />
     </div>
-    <p class="text-sm text-gray-500 mb-6">Jot down your tasks to see your capacity before you commit to more.</p>
 
-    <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl mb-8 border border-gray-100">
-      <span class="font-semibold text-gray-700 text-sm">My comfortable weekly capacity:</span>
-      <div class="flex items-center gap-2">
-        <input type="number" id="capacityInput" value="10" class="w-16 p-2 text-center rounded-lg border border-gray-200 font-bold text-blue-900">
-        <span class="text-gray-500 text-sm">hrs</span>
+    <div class="mb-7">
+      <div class="flex justify-between items-center mb-1">
+        <label class="font-semibold text-gray-700">Emotional Load</label>
+        <span id="emotionalDisplay" class="text-2xl font-black text-purple-600">3</span>
+      </div>
+      <div class="flex justify-between text-xs text-gray-400 mb-1">
+        <span>😔 Very heavy</span><span>😊 Light</span>
+      </div>
+      <input id="emotional" type="range" min="1" max="5" value="3" class="w-full accent-purple-600 cursor-pointer" />
+    </div>
+
+    <div class="mb-7">
+      <div class="flex justify-between items-center mb-1">
+        <label class="font-semibold text-gray-700">Hours Available This Week</label>
+        <span id="hoursDisplay" class="text-2xl font-black text-purple-600">3</span>
+      </div>
+      <div class="flex justify-between text-xs text-gray-400 mb-1">
+        <span>⏱ Under 1 hr</span><span>🕐 5+ hrs</span>
+      </div>
+      <input id="hours" type="range" min="1" max="5" value="3" class="w-full accent-purple-600 cursor-pointer" />
+    </div>
+
+    <div class="mb-7">
+      <div class="flex justify-between items-center mb-1">
+        <label class="font-semibold text-gray-700">Stress Level</label>
+        <span id="stressDisplay" class="text-2xl font-black text-purple-600">3</span>
+      </div>
+      <div class="flex justify-between text-xs text-gray-400 mb-1">
+        <span>😤 Very stressed</span><span>😌 Calm</span>
       </div>
     </div>
 
-    <div class="flex flex-col items-center mb-6">
-      <div id="plate-viz" class="relative"></div>
-      <div id="arc-details" class="mt-4 w-full bg-gray-50 rounded-xl p-4 hidden border border-gray-100"></div>
-    </div>
+    <label class="block font-semibold text-gray-600 mb-1">
+      Anything on your mind? <span class="text-gray-400 font-normal">(optional)</span>
+    </label>
+    <textarea id="note" rows="3" placeholder="You can write anything here — this goes straight to your coordinator."
+      class="w-full border-2 border-gray-200 rounded-xl p-3 mb-8 focus:outline-none focus:border-purple-400 resize-none"></textarea>
 
-    <div class="mb-4">
-      <h3 class="text-sm font-bold text-gray-700 mb-3 border-b pb-2">Your Tasks This Week</h3>
-      <datalist id="task-autocomplete"></datalist>
-      <div id="task-container" class="space-y-3"></div>
-    </div>
-
-    <button id="btn-add-task" class="flex items-center gap-2 text-blue-600 font-bold mb-8 hover:text-blue-800 transition-colors text-sm px-2 py-1 rounded hover:bg-blue-50">
-      + Add task
+    <button id="submitBtn" onclick="submitCheckin()"
+      class="w-full bg-purple-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-purple-700 active:scale-95 transition-all">
+      Submit My Check-In
     </button>
 
-    <button id="btn-submit" class="w-full py-4 bg-blue-900 text-white font-bold rounded-2xl shadow-md hover:bg-blue-800 transition-all text-lg">
-      Lock in my plate
-    </button>
-  </div>
-
-  <div id="receipt-view" class="max-w-md mx-auto bg-white rounded-3xl shadow-lg border border-gray-100 p-8 hidden text-center mt-10">
-    <h2 class="text-2xl font-bold text-gray-800 mb-2">Capacity Receipt</h2>
-    <p class="text-gray-500 text-sm mb-6">Your week at a glance</p>
-    
-    <div class="text-5xl font-black text-blue-900 mb-2">
-      <span id="receipt-load">0</span> <span class="text-2xl text-gray-400 font-normal">/ <span id="receipt-cap">0</span></span>
+    <div id="errorMsg" class="hidden mt-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-center text-sm">
+      Please enter your name before submitting.
     </div>
-    <p class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-6">Weighted Load vs Capacity</p>
-
-    <div class="bg-gray-50 rounded-xl p-4 text-sm text-left space-y-3 mb-6">
-      <div class="flex justify-between">
-        <span class="text-gray-600">Total raw hours:</span>
-        <span id="receipt-raw" class="font-bold">0 hrs</span>
-      </div>
-      <div class="border-t border-gray-200 pt-3">
-        <p class="text-gray-600 mb-2">Composition:</p>
-        <div class="flex gap-2 font-bold">
-          <span id="receipt-pct-e" class="text-[#F4A261]">0%</span>🔥
-          <span id="receipt-pct-n" class="text-[#A8C5A0]">0%</span>😐
-          <span id="receipt-pct-d" class="text-[#6B7FA3]">0%</span>🪨
-        </div>
-      </div>
+    <div id="successMsg" class="hidden mt-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl text-center">
+      <p class="text-2xl mb-1">💜</p>
+      <p class="font-bold">Thank you! Your check-in was recorded.</p>
+      <p class="text-sm text-gray-400 mt-1">Your coordinator will be able to see how you're doing.</p>
     </div>
 
-    <p id="receipt-comparison" class="italic text-gray-500 text-sm mb-8"></p>
+    <div class="mt-8 text-center">
+      <a href="dashboard.html" class="text-purple-400 text-sm hover:text-purple-600 underline">
+        Coordinator? View the dashboard →
+      </a>
+    </div>
 
-    <button onclick="location.reload()" class="w-full py-3 border-2 border-blue-900 text-blue-900 font-bold rounded-xl hover:bg-gray-50 transition-all">
-      Start Over
-    </button>
   </div>
 
   <script>
-    // --- 1. FIREBASE SETUP ---
+    // ─────────────────────────────────────────────────────────────
+    // PART 1: Firebase Configuration
+    // ─────────────────────────────────────────────────────────────
     const firebaseConfig = {
       apiKey: "AIzaSyCIuiidzKhTKrUDEIe34jeevCelWDttA3k",
       authDomain: "chaavaruthu.firebaseapp.com",
@@ -92,294 +108,98 @@
       projectId: "chaavaruthu",
       storageBucket: "chaavaruthu.firebasestorage.app",
       messagingSenderId: "21044301735",
-      appId: "1:21044301735:web:c81aa40d29446dc37e7082"
+      appId: "1:21044301735:web:c81aa40d29446dc37e7082",
+      measurementId: "G-18BY8VY06N"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    console.log('Firebase ready!');
 
-    // --- 2. GLOBAL STATE ---
-    let tasks = [];
-    let capacityThreshold = 10;
-    let volunteerId = document.getElementById('volIdInput').value;
-    let autocompleteWords = {};
-    let lastWeekData = null;
-    
-    // Generate YYYY-MM-DD for current week (using Monday as start)
-    function getWeekString(date) {
-      const d = new Date(date);
-      const day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6:1);
-      const monday = new Date(d.setDate(diff));
-      return monday.toISOString().split('T')[0];
-    }
-    const currentWeekStr = getWeekString(new Date());
+    // ─────────────────────────────────────────────────────────────
+    // PART 2: Live slider display with dynamic colors
+    // ─────────────────────────────────────────────────────────────
+    var sliders = ['energy', 'emotional', 'hours', 'stress'];
 
-    // --- 3. D3 VISUALIZATION SETUP ---
-    const width = 220, height = 220, baseRadius = 90;
-    const svg = d3.select("#plate-viz").append("svg")
-      .attr("width", width).attr("height", height)
-      .append("g").attr("transform", `translate(${width/2},${height/2})`);
+    sliders.forEach(function(id) {
+      var slider  = document.getElementById(id);
+      var display = document.getElementById(id + 'Display');
 
-    // Outer Rim
-    svg.append("circle")
-      .attr("r", baseRadius)
-      .attr("fill", "none")
-      .attr("stroke", "#f3f4f6")
-      .attr("stroke-width", 6);
+      function updateColour() {
+        var val = parseInt(slider.value);
+        display.textContent = val;
 
-    const colorScale = d3.scaleOrdinal()
-      .domain(["energizing", "neutral", "draining"])
-      .range(["#F4A261", "#A8C5A0", "#6B7FA3"]);
-
-    const pie = d3.pie().value(d => d.value).sort(null);
-
-    function updatePlate() {
-      const eHrs = tasks.filter(t => t.tag === 'energizing').reduce((sum, t) => sum + t.hours, 0);
-      const nHrs = tasks.filter(t => t.tag === 'neutral').reduce((sum, t) => sum + t.hours, 0);
-      const dHrs = tasks.filter(t => t.tag === 'draining').reduce((sum, t) => sum + t.hours, 0);
-      
-      const weightedLoad = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
-      
-      // Overflow math: scale inner arcs if load > capacity
-      let scale = 1;
-      if (capacityThreshold > 0 && weightedLoad > capacityThreshold) {
-        scale = Math.min(1.15, weightedLoad / capacityThreshold); // Cap visual explosion
+        // Colour the number based on value (1=red, 3=yellow, 5=green)
+        if      (val >= 4) { display.className = 'text-2xl font-black text-green-500';  }
+        else if (val >= 3) { display.className = 'text-2xl font-black text-yellow-500'; }
+        else               { display.className = 'text-2xl font-black text-red-500'; }
       }
-      const currentRadius = baseRadius * scale;
-      const arcGenerator = d3.arc().innerRadius(0).outerRadius(currentRadius);
 
-      const drawData = (eHrs+nHrs+dHrs === 0) 
-        ? [{ label: "empty", value: 1 }] 
-        : [
-            { label: "energizing", value: eHrs },
-            { label: "neutral", value: nHrs },
-            { label: "draining", value: dHrs }
-          ];
+      slider.addEventListener('input', updateColour);
+      updateColour(); // set initial colour on page load
+    });
 
-      const arcs = svg.selectAll(".slice").data(pie(drawData), d => d.data.label);
+    // ─────────────────────────────────────────────────────────────
+    // PART 3: submitCheckin Logic
+    // ─────────────────────────────────────────────────────────────
+    function submitCheckin() {
+      // 1. Read all values from the form
+      var name      = document.getElementById('vol-name').value.trim();
+      var energy    = parseInt(document.getElementById('energy').value);
+      var emotional = parseInt(document.getElementById('emotional').value);
+      var hours     = parseInt(document.getElementById('hours').value);
+      var stress    = parseInt(document.getElementById('stress').value);
+      var note      = document.getElementById('note').value.trim();
 
-      arcs.enter()
-        .append("path")
-        .attr("class", "slice cursor-pointer transition-opacity hover:opacity-80")
-        .attr("fill", d => d.data.label === "empty" ? "transparent" : colorScale(d.data.label))
-        .attr("d", arcGenerator)
-        .on("click", (event, d) => showArcDetails(d.data.label))
-        .merge(arcs)
-        .transition().duration(400)
-        .attr("d", arcGenerator)
-        .attr("fill", d => d.data.label === "empty" ? "transparent" : colorScale(d.data.label));
-
-      arcs.exit().remove();
-    }
-
-    function showArcDetails(tag) {
-      const detailsDiv = document.getElementById('arc-details');
-      if (tag === "empty" || tag === "none") {
-        detailsDiv.classList.add('hidden');
+      // 2. Validate — don't allow empty name
+      if (name === '') {
+        document.getElementById('errorMsg').classList.remove('hidden');
         return;
       }
-      
-      const filtered = tasks.filter(t => t.tag === tag && t.hours > 0 && t.name.trim() !== "");
-      if (filtered.length === 0) return;
+      document.getElementById('errorMsg').classList.add('hidden');
 
-      const emoji = tag === 'energizing' ? '🔥' : tag === 'neutral' ? '😐' : '🪨';
-      let html = `<h4 class="font-bold text-gray-700 capitalize mb-2 flex items-center gap-1">${emoji} ${tag} Tasks</h4><ul class="space-y-1 text-sm text-gray-600">`;
-      filtered.forEach(t => {
-        html += `<li class="flex justify-between border-b border-gray-100 pb-1">
-                   <span>${t.name} <span class="text-xs text-gray-400">(${t.org})</span></span>
-                   <span class="font-bold text-gray-800">${t.hours}h</span>
-                 </li>`;
+      // 3. Replace spaces so the name works as a Firebase path
+      var safeName = name.replace(/ /g, '_');
+
+      // 4. Calculate burnout score (0–100)
+      var rawScore = energy + emotional + hours + (6 - stress);
+      var score    = Math.round((rawScore / 20) * 100);
+
+      // 5. Determine status from score
+      var status;
+      if      (score >= 70) { status = 'green';  }
+      else if (score >= 40) { status = 'yellow'; }
+      else                  { status = 'red'; }
+
+      // 6. Disable button while saving
+      var btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      // 7. Save to Firebase
+      db.ref('checkins/' + safeName).set({
+        name:      name,
+        energy:    energy,
+        emotional: emotional,
+        hours:     hours,
+        stress:    stress,
+        note:      note,
+        score:     score,
+        status:    status,
+        timestamp: Date.now()
+      })
+      .then(function() {
+        // 8. On success — show thank you message
+        document.getElementById('successMsg').classList.remove('hidden');
+        btn.textContent = 'Submitted ✓';
+      })
+      .catch(function(err) {
+        // 9. On error
+        console.error('Save failed:', err);
+        alert('Something went wrong. Open F12 → Console for details.');
+        btn.disabled   = false;
+        btn.textContent = 'Submit My Check-In';
       });
-      html += `</ul>`;
-      detailsDiv.innerHTML = html;
-      detailsDiv.classList.remove('hidden');
     }
-
-    // --- 4. VANILLA JS DOM MANAGEMENT FOR TASKS ---
-    function generateId() {
-      return Date.now().toString() + Math.random().toString(36).substr(2, 5);
-    }
-
-    function renderTaskRow(task) {
-      const div = document.createElement('div');
-      div.className = "flex flex-wrap items-center gap-2 p-3 bg-gray-50 rounded-xl border border-gray-100";
-      div.id = `row-${task.id}`;
-
-      // Styling logic for tags
-      const eClass = task.tag === 'energizing' ? 'bg-[#F4A261]/20 ring-2 ring-[#F4A261] opacity-100' : 'opacity-40 grayscale hover:grayscale-0';
-      const nClass = task.tag === 'neutral' ? 'bg-[#A8C5A0]/20 ring-2 ring-[#A8C5A0] opacity-100' : 'opacity-40 grayscale hover:grayscale-0';
-      const dClass = task.tag === 'draining' ? 'bg-[#6B7FA3]/20 ring-2 ring-[#6B7FA3] opacity-100' : 'opacity-40 grayscale hover:grayscale-0';
-
-      div.innerHTML = `
-        <input type="text" placeholder="Task name" list="task-autocomplete" value="${task.name}" class="task-name flex-1 min-w-[120px] p-2 rounded-lg border border-gray-200 text-sm focus:ring-1 focus:ring-blue-500 outline-none">
-        <input type="text" placeholder="Org" value="${task.org}" class="task-org w-20 p-2 rounded-lg border border-gray-200 text-sm focus:ring-1 focus:ring-blue-500 outline-none">
-        <div class="flex items-center bg-white rounded-lg border border-gray-200 px-1">
-          <button class="btn-minus px-2 text-gray-400 font-bold hover:text-blue-600">-</button>
-          <input type="number" value="${task.hours}" min="0.5" step="0.5" class="task-hours w-10 text-center font-bold text-sm border-none outline-none bg-transparent">
-          <button class="btn-plus px-2 text-gray-400 font-bold hover:text-blue-600">+</button>
-        </div>
-        <div class="flex gap-1 bg-white p-1 border border-gray-200 rounded-lg">
-          <button class="btn-tag text-lg p-1 rounded transition-all ${eClass}" data-tag="energizing">🔥</button>
-          <button class="btn-tag text-lg p-1 rounded transition-all ${nClass}" data-tag="neutral">😐</button>
-          <button class="btn-tag text-lg p-1 rounded transition-all ${dClass}" data-tag="draining">🪨</button>
-        </div>
-        <button class="btn-delete text-gray-300 hover:text-red-500 px-2 font-bold text-xl">&times;</button>
-      `;
-
-      // Event Listeners strictly bound to avoid losing input focus
-      div.querySelector('.task-name').addEventListener('input', (e) => { task.name = e.target.value; });
-      div.querySelector('.task-org').addEventListener('input', (e) => { task.org = e.target.value; });
-      
-      const hoursInput = div.querySelector('.task-hours');
-      const updateHours = (val) => {
-        task.hours = Math.max(0, parseFloat(val) || 0);
-        hoursInput.value = task.hours;
-        updatePlate();
-      };
-      
-      hoursInput.addEventListener('input', (e) => updateHours(e.target.value));
-      div.querySelector('.btn-minus').addEventListener('click', () => updateHours(task.hours - 0.5));
-      div.querySelector('.btn-plus').addEventListener('click', () => updateHours(task.hours + 0.5));
-
-      const tagBtns = div.querySelectorAll('.btn-tag');
-      tagBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          task.tag = btn.dataset.tag;
-          // Quickly swap classes locally without full re-render
-          tagBtns.forEach(b => {
-             b.className = `btn-tag text-lg p-1 rounded transition-all opacity-40 grayscale hover:grayscale-0`;
-          });
-          if(task.tag === 'energizing') btn.className = `btn-tag text-lg p-1 rounded transition-all bg-[#F4A261]/20 ring-2 ring-[#F4A261] opacity-100`;
-          if(task.tag === 'neutral') btn.className = `btn-tag text-lg p-1 rounded transition-all bg-[#A8C5A0]/20 ring-2 ring-[#A8C5A0] opacity-100`;
-          if(task.tag === 'draining') btn.className = `btn-tag text-lg p-1 rounded transition-all bg-[#6B7FA3]/20 ring-2 ring-[#6B7FA3] opacity-100`;
-          updatePlate();
-        });
-      });
-
-      div.querySelector('.btn-delete').addEventListener('click', () => {
-        tasks = tasks.filter(t => t.id !== task.id);
-        div.remove();
-        updatePlate();
-      });
-
-      return div;
-    }
-
-    function addNewTaskRow() {
-      const newTask = { id: generateId(), name: "", org: "", hours: 1, tag: "neutral" };
-      tasks.push(newTask);
-      document.getElementById('task-container').appendChild(renderTaskRow(newTask));
-      updatePlate();
-    }
-
-    document.getElementById('btn-add-task').addEventListener('click', addNewTaskRow);
-    
-    // Handle capacity changes
-    document.getElementById('capacityInput').addEventListener('input', (e) => {
-      capacityThreshold = parseFloat(e.target.value) || 1;
-      db.ref(`volunteers/${volunteerId}/profile/capacityThreshold`).set(capacityThreshold);
-      updatePlate();
-    });
-
-    document.getElementById('volIdInput').addEventListener('change', (e) => {
-      volunteerId = e.target.value;
-      loadInitialData();
-    });
-
-    // --- 5. FIREBASE DATA LOADING & SUBMITTING ---
-    async function loadInitialData() {
-      // Clear current
-      document.getElementById('task-container').innerHTML = '';
-      tasks = [];
-      
-      // Load Profile & Autocomplete
-      db.ref(`volunteers/${volunteerId}/profile/capacityThreshold`).once('value', snap => {
-        if(snap.exists()) {
-          capacityThreshold = snap.val();
-          document.getElementById('capacityInput').value = capacityThreshold;
-        }
-      });
-
-      db.ref(`volunteers/${volunteerId}/autocomplete`).once('value', snap => {
-        if(snap.exists()) {
-          autocompleteWords = snap.val();
-          const datalist = document.getElementById('task-autocomplete');
-          datalist.innerHTML = '';
-          Object.keys(autocompleteWords).forEach(word => {
-            const opt = document.createElement('option');
-            opt.value = word;
-            datalist.appendChild(opt);
-          });
-        }
-      });
-
-      // Calculate last week's string
-      const d = new Date();
-      d.setDate(d.getDate() - 7);
-      const lastWeekStr = getWeekString(d);
-      
-      db.ref(`volunteers/${volunteerId}/weeks/${lastWeekStr}/tasks`).once('value', snap => {
-        if(snap.exists()) {
-          const lwTasks = Object.values(snap.val());
-          const e = lwTasks.filter(t=>t.tag==='energizing').reduce((s,t)=>s+t.hours,0);
-          const n = lwTasks.filter(t=>t.tag==='neutral').reduce((s,t)=>s+t.hours,0);
-          const d = lwTasks.filter(t=>t.tag==='draining').reduce((s,t)=>s+t.hours,0);
-          lastWeekData = { load: (d*1.5) + (n*1.0) + (e*0.75) };
-        } else {
-          lastWeekData = null;
-        }
-      });
-
-      // Start with one empty row
-      addNewTaskRow();
-    }
-
-    document.getElementById('btn-submit').addEventListener('click', () => {
-      // Filter empty rows
-      const validTasks = tasks.filter(t => t.name.trim() !== "");
-      if(validTasks.length === 0) return alert("Please enter at least one task.");
-
-      const eHrs = validTasks.filter(t => t.tag === 'energizing').reduce((sum, t) => sum + t.hours, 0);
-      const nHrs = validTasks.filter(t => t.tag === 'neutral').reduce((sum, t) => sum + t.hours, 0);
-      const dHrs = validTasks.filter(t => t.tag === 'draining').reduce((sum, t) => sum + t.hours, 0);
-      const totalRaw = eHrs + nHrs + dHrs;
-      const weightedLoad = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
-
-      // Save Tasks
-      const tasksRef = db.ref(`volunteers/${volunteerId}/weeks/${currentWeekStr}/tasks`);
-      tasksRef.set(null); // Clear old
-      validTasks.forEach(t => { tasksRef.child(t.id).set(t); });
-
-      // Save Autocomplete
-      validTasks.forEach(t => {
-        const sanitized = t.name.replace(/[.#$[\]\\]/g, "").trim();
-        if(sanitized) {
-          db.ref(`volunteers/${volunteerId}/autocomplete/${sanitized}`).set(true);
-        }
-      });
-
-      // Render Summary Card
-      document.getElementById('main-view').classList.add('hidden');
-      document.getElementById('receipt-view').classList.remove('hidden');
-
-      document.getElementById('receipt-load').textContent = weightedLoad.toFixed(1);
-      document.getElementById('receipt-cap').textContent = capacityThreshold;
-      document.getElementById('receipt-raw').textContent = totalRaw + " hrs";
-      
-      document.getElementById('receipt-pct-e').textContent = totalRaw > 0 ? Math.round((eHrs/totalRaw)*100)+"%" : "0%";
-      document.getElementById('receipt-pct-n').textContent = totalRaw > 0 ? Math.round((nHrs/totalRaw)*100)+"%" : "0%";
-      document.getElementById('receipt-pct-d').textContent = totalRaw > 0 ? Math.round((dHrs/totalRaw)*100)+"%" : "0%";
-
-      const compElem = document.getElementById('receipt-comparison');
-      if (lastWeekData) {
-        const diff = (weightedLoad - lastWeekData.load).toFixed(1);
-        compElem.textContent = `Your weighted load is ${Math.abs(diff)} ${diff > 0 ? 'higher' : 'lower'} than last week.`;
-      } else {
-        compElem.textContent = "First week recorded. Check back next week for a comparison!";
-      }
-    });
-
-    // Boot
-    loadInitialData();
   </script>
 </body>
 </html>
