@@ -198,9 +198,13 @@ The plate overflows its rim visually when weighted load exceeds capacity — no 
 ## Project Demo
 
 ### Video
-[Add demo video link here]
 
-*Demo covers: volunteer adding tasks and watching the plate fill live → submitting and seeing the reflection card → coordinator dashboard showing real-time status → expanding a volunteer card for detail.*
+
+https://github.com/user-attachments/assets/ac496e3d-eed4-41de-9447-9694e36bb82d
+
+
+
+
 
 ### Additional Demos
 [chaavaruthu-theta.vercel.app](https://chaavaruthu-theta.vercel.app)
