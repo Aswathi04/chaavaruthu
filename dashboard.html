@@ -3,227 +3,581 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your team this week</title>
+  <title>VolunteerFlow — Your team this week</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <style>
-    /* Step 2: Visual design cleanup */
     :root {
-      --bg-color: #FDFAF6;
-      --card-border: #EEEBE6;
-      --text-main: #333333;
-      --text-muted: #777777;
-      --energizing: #F4A261;
-      --neutral: #A8C5A0;
-      --draining: #6B7FA3;
+      --bg:        #F5F0E8;
+      --surface:   #FDFAF5;
+      --border:    #E2D9C8;
+      --ink:       #2C2416;
+      --ink-soft:  #7A6E5F;
+      --ink-faint: #B5A898;
+      --energizing:#E8874A;
+      --neutral:   #7FAF78;
+      --draining:  #5C7A9E;
+      --accent:    #E8874A;
+      --green:     #4A9B5F;
+      --yellow:    #D4A017;
+      --red:       #B84040;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-main);
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--ink);
       line-height: 1.7;
-      padding: 40px 20px;
+      min-height: 100vh;
     }
 
-    h1, h2, h3 { font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
-    h1 { font-size: 28px; }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 15%, rgba(232,135,74,0.05) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 85%, rgba(92,122,158,0.05) 0%, transparent 55%);
+      pointer-events: none; z-index: 0;
+    }
 
-    .container { max-width: 1000px; margin: 0 auto; }
+    .page {
+      position: relative; z-index: 1;
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    /* ── HEADER ──────────────────────────────── */
+    .site-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 48px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-family: 'Lora', serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.3px;
+    }
+    .logo span { color: var(--accent); }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    #loading-text {
+      font-size: 12px;
+      color: var(--ink-faint);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .live-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── PAGE TITLE ──────────────────────────── */
+    .page-title {
+      margin-bottom: 36px;
+    }
+    .page-title h1 {
+      font-family: 'Lora', serif;
+      font-size: 34px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+    .page-title p {
+      font-size: 15px;
+      color: var(--ink-soft);
+      font-style: italic;
+      font-family: 'Lora', serif;
+    }
+
+    /* ── LEGEND ──────────────────────────────── */
+    .legend-row {
+      display: flex;
       gap: 24px;
-      margin-bottom: 24px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+    .legend-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .legend-divider {
+      width: 1px;
+      height: 16px;
+      background: var(--border);
+    }
+    .status-legend {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+    .status-swatch {
+      width: 8px; height: 8px;
+      border-radius: 50%;
     }
 
-    .card {
-      background-color: #FFFFFF;
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
+    /* ── GRID ────────────────────────────────── */
+    #dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    /* ── VOLUNTEER CARD ──────────────────────── */
+    .vol-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
       padding: 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
       cursor: pointer;
-      transition: transform 0.2s;
       position: relative;
+      transition: all 0.2s;
+      overflow: hidden;
     }
-    .card:hover { transform: translateY(-2px); }
-
-    .status-dot {
-      width: 12px; height: 12px; border-radius: 50%;
-      position: absolute; top: 24px; right: 24px;
+    .vol-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 16px 16px 0 0;
+      transition: opacity 0.2s;
+      opacity: 0;
     }
-    .dot-green { background-color: #4CAF50; }
-    .dot-yellow { background-color: #FFC107; }
-    .dot-red { background-color: #F44336; }
+    .vol-card.status-green::before  { background: var(--green); }
+    .vol-card.status-yellow::before { background: var(--yellow); }
+    .vol-card.status-red::before    { background: var(--red); }
+    .vol-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(44,36,22,0.1);
+    }
+    .vol-card:hover::before { opacity: 1; }
 
-    /* Inline Expansion Panel */
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .vol-name {
+      font-family: 'Lora', serif;
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .status-badge {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+    .badge-green  { background: rgba(74,155,95,0.12);  color: var(--green); }
+    .badge-yellow { background: rgba(212,160,23,0.12); color: var(--yellow); }
+    .badge-red    { background: rgba(184,64,64,0.12);  color: var(--red); }
+
+    .card-plate {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .card-load {
+      font-size: 12px;
+      color: var(--ink-faint);
+      text-align: center;
+    }
+    .card-load strong {
+      color: var(--ink-soft);
+    }
+
+    /* ── DETAIL PANEL ────────────────────────── */
     .detail-panel {
       grid-column: 1 / -1;
-      background-color: #FFFFFF;
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 32px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px;
       display: flex;
-      gap: 32px;
+      gap: 40px;
       align-items: flex-start;
+      position: relative;
+      animation: expandIn 0.25s ease both;
+      box-shadow: 0 4px 20px rgba(44,36,22,0.07);
     }
-    .detail-plate { flex-shrink: 0; }
-    .detail-info { flex-grow: 1; }
-    .detail-tasks { margin-top: 16px; font-size: 14px; }
-    .task-item { border-bottom: 1px solid #F5F5F5; padding: 8px 0; display: flex; justify-content: space-between; }
+    @keyframes expandIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .detail-close {
+      position: absolute; top: 20px; right: 24px;
+      background: none; border: none;
+      font-size: 22px; color: var(--ink-faint);
+      cursor: pointer; transition: color 0.15s;
+    }
+    .detail-close:hover { color: var(--ink); }
+
+    .detail-left { flex-shrink: 0; }
+
+    .detail-right { flex-grow: 1; min-width: 0; }
+    .detail-name {
+      font-family: 'Lora', serif;
+      font-size: 26px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .detail-meta {
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-bottom: 28px;
+    }
+
+    .detail-section-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--ink-faint);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+
+    .detail-task-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .detail-task-item:last-child { border-bottom: none; }
+    .detail-task-left { display: flex; align-items: center; gap: 8px; }
+    .detail-task-org {
+      font-size: 11px;
+      color: var(--ink-faint);
+      margin-left: 2px;
+    }
+    .detail-task-hrs {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+
+    .load-bar-wrap {
+      margin-top: 20px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+    }
+    .load-bar-label {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .load-bar-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .load-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── EMPTY STATE ─────────────────────────── */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 24px;
+      color: var(--ink-soft);
+    }
+    .empty-state p {
+      font-family: 'Lora', serif;
+      font-size: 18px;
+      font-style: italic;
+    }
 
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--card-border); padding-bottom: 16px; margin-bottom: 32px;">
-      <h1>Your team this week</h1>
-      <p id="loading-text" style="color: var(--text-muted);">Fetching data...</p>
-    </div>
+<div class="page">
 
-    <div id="dashboard-grid" class="grid"></div>
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="logo">Volunteer<span>Flow</span></div>
+    <div class="header-right">
+      <div id="loading-text">Fetching data...</div>
+    </div>
+  </header>
+
+  <!-- PAGE TITLE -->
+  <div class="page-title">
+    <h1>Your team this week</h1>
+    <p>A quiet look at who's giving what — and what it's costing them.</p>
   </div>
 
-  <script>
-    // --- FIREBASE CONFIGURATION ---
-    const firebaseConfig = {
+  <!-- LEGEND -->
+  <div class="legend-row">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--energizing)"></div> Energizing</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--neutral)"></div> Neutral</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--draining)"></div> Draining</div>
+    <div class="legend-divider"></div>
+    <div class="legend-item"><div class="status-swatch" style="background:var(--green)"></div> Doing well</div>
+    <div class="legend-item"><div class="status-swatch" style="background:var(--yellow)"></div> Worth checking in</div>
+    <div class="legend-item"><div class="status-swatch" style="background:var(--red)"></div> Needs attention</div>
+  </div>
+
+  <!-- GRID -->
+  <div id="dashboard-grid"></div>
+
+</div>
+
+<script>
+  // ── FIREBASE ──────────────────────────────────────────────────────────
+  const firebaseConfig = {
     apiKey: "AIzaSyCIuiidzKhTKrUDEIe34jeevCelWDttA3k",
     authDomain: "chaavaruthu.firebaseapp.com",
     databaseURL: "https://chaavaruthu-default-rtdb.firebaseio.com",
     projectId: "chaavaruthu",
     storageBucket: "chaavaruthu.firebasestorage.app",
     messagingSenderId: "21044301735",
-    appId: "1:21044301735:web:c81aa40d29446dc37e7082",
-    measurementId: "G-18BY8VY06N"
+    appId: "1:21044301735:web:c81aa40d29446dc37e7082"
   };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-    const colors = { energizing: "#F4A261", neutral: "#A8C5A0", draining: "#6B7FA3" };
-    let volunteersData = {};
+  const colors = { energizing: "#E8874A", neutral: "#7FAF78", draining: "#5C7A9E" };
+  let volunteersData = {};
+  let activePanel = null;
 
-    function getLatestWeek(weeksObj) {
-      if (!weeksObj) return null;
-      const dates = Object.keys(weeksObj).sort().reverse();
-      return dates.length > 0 ? weeksObj[dates[0]].tasks : null;
+  function getLatestWeek(weeksObj) {
+    if (!weeksObj) return null;
+    const dates = Object.keys(weeksObj).sort().reverse();
+    return dates.length > 0 ? weeksObj[dates[0]].tasks : null;
+  }
+
+  // ── DATA LOAD ─────────────────────────────────────────────────────────
+  db.ref('volunteers').on('value', snap => {
+    const loadingEl = document.getElementById('loading-text');
+    loadingEl.innerHTML = '<div class="live-dot"></div> Live';
+
+    const grid = document.getElementById('dashboard-grid');
+    grid.innerHTML = '';
+    activePanel = null;
+
+    const data = snap.val();
+    if (!data) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <p>Nothing yet — how's the week looking?</p>
+        </div>`;
+      return;
     }
 
-    db.ref('volunteers').on('value', snap => {
-      document.getElementById('loading-text').innerText = "Live";
-      const grid = document.getElementById('dashboard-grid');
-      grid.innerHTML = '';
-      
-      const data = snap.val();
-      if (!data) {
-        grid.innerHTML = '<p style="color: var(--text-muted);">Nothing yet — how\'s the week looking?</p>';
-        return;
-      }
+    volunteersData = {};
 
-      volunteersData = {};
+    Object.keys(data).forEach(vid => {
+      const vol = data[vid];
+      const capacity = vol.profile?.capacityThreshold ?? 10;
+      const latestRaw = getLatestWeek(vol.weeks);
+      if (!latestRaw) return;
 
-      Object.keys(data).forEach(vid => {
-        const vol = data[vid];
-        const capacity = (vol.profile && vol.profile.capacityThreshold) ? vol.profile.capacityThreshold : 10;
-        const latestTasks = getLatestWeek(vol.weeks);
-        
-        if (!latestTasks) return; // Skip if no task history at all
+      const tasksArr = Array.isArray(latestRaw) ? latestRaw : Object.values(latestRaw);
+      const eHrs = tasksArr.filter(t => t.tag === 'energizing').reduce((s, t) => s + t.hours, 0);
+      const nHrs = tasksArr.filter(t => t.tag === 'neutral').reduce((s, t) => s + t.hours, 0);
+      const dHrs = tasksArr.filter(t => t.tag === 'draining').reduce((s, t) => s + t.hours, 0);
+      const weightedLoad = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
+      const ratio = weightedLoad / capacity;
 
-        const tasksArr = Object.values(latestTasks);
-        const eHrs = tasksArr.filter(t => t.tag === 'energizing').reduce((s,t) => s+t.hours, 0);
-        const nHrs = tasksArr.filter(t => t.tag === 'neutral').reduce((s,t) => s+t.hours, 0);
-        const dHrs = tasksArr.filter(t => t.tag === 'draining').reduce((s,t) => s+t.hours, 0);
-        
-        const weightedLoad = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
-        const ratio = weightedLoad / capacity;
-        
-        let statusClass = 'dot-green';
-        if (ratio > 1.0) statusClass = 'dot-red';
-        else if (ratio > 0.85) statusClass = 'dot-yellow';
+      let statusKey = 'green';
+      if (ratio > 1.0) statusKey = 'red';
+      else if (ratio > 0.85) statusKey = 'yellow';
 
-        volunteersData[vid] = { tasks: tasksArr, capacity, weightedLoad, ratio };
+      const badgeLabel = { green: 'Doing well', yellow: 'Check in', red: 'Needs attention' }[statusKey];
+      volunteersData[vid] = { tasks: tasksArr, capacity, weightedLoad, ratio, statusKey };
 
-        // Create Card
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <div class="status-dot ${statusClass}"></div>
-          <h2 style="font-size: 18px; margin-bottom: 16px;">${vid}</h2>
-          <div id="mini-${vid}" style="display: flex; justify-content: center;"></div>
-        `;
-        
-        // Handle Expansion
-        card.addEventListener('click', () => {
-          document.querySelectorAll('.detail-panel').forEach(p => p.remove());
-          
-          const panel = document.createElement('div');
-          panel.className = 'detail-panel';
-          
-          let tasksHtml = '';
-          tasksArr.forEach(t => {
-            const emoji = t.tag === 'energizing' ? '🔥' : t.tag === 'neutral' ? '😐' : '🪨';
-            tasksHtml += `<div class="task-item"><span>${emoji} ${t.name} <span style="color: #999; font-size: 12px;">(${t.org})</span></span> <strong>${t.hours}h</strong></div>`;
-          });
+      // Card
+      const card = document.createElement('div');
+      card.className = `vol-card status-${statusKey}`;
+      card.dataset.vid = vid;
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="vol-name">${vid}</div>
+          <div class="status-badge badge-${statusKey}">${badgeLabel}</div>
+        </div>
+        <div class="card-plate" id="mini-${vid}"></div>
+        <div class="card-load">Load: <strong>${weightedLoad.toFixed(1)}</strong> / ${capacity}</div>
+      `;
 
-          panel.innerHTML = `
-            <div class="detail-plate" id="detail-svg-${vid}"></div>
-            <div class="detail-info">
-              <h2 style="margin-bottom: 4px;">${vid}'s Week</h2>
-              <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Weighted Load: ${weightedLoad.toFixed(1)} / Capacity: ${capacity}</p>
-              <h3 style="font-size: 14px; text-transform: uppercase; color: #999; border-bottom: 1px solid #EEE; padding-bottom: 8px;">Tasks Logged</h3>
-              <div class="detail-tasks">${tasksHtml}</div>
-            </div>
-            <button onclick="this.parentElement.remove()" style="background:none; border:none; font-size: 24px; color: #CCC; cursor: pointer; position: absolute; right: 24px; top: 24px;">×</button>
-          `;
-          
-          card.insertAdjacentElement('afterend', panel);
-          drawPlateSVG(`detail-svg-${vid}`, 200, tasksArr, capacity);
-        });
+      card.addEventListener('click', () => toggleDetail(vid, card));
+      grid.appendChild(card);
 
-        grid.appendChild(card);
-        drawPlateSVG(`mini-${vid}`, 60, tasksArr, capacity);
-      });
+      drawPlateSVG(`mini-${vid}`, 70, tasksArr, capacity);
     });
 
-    // --- D3 PLATE RENDERER (Shared logic) ---
-    function drawPlateSVG(containerId, size, taskData, cap) {
-      const container = d3.select(`#${containerId}`);
-      container.selectAll("*").remove();
-
-      const eHrs = taskData.filter(t => t.tag === 'energizing').reduce((s,t) => s+t.hours, 0);
-      const nHrs = taskData.filter(t => t.tag === 'neutral').reduce((s,t) => s+t.hours, 0);
-      const dHrs = taskData.filter(t => t.tag === 'draining').reduce((s,t) => s+t.hours, 0);
-      const weightedLoad = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
-
-      const svg = container.append("svg")
-        .attr("width", size).attr("height", size)
-        .append("g").attr("transform", `translate(${size/2},${size/2})`);
-
-      const radius = size / 2;
-      const rimRadius = radius - (size > 100 ? 10 : 4);
-
-      svg.append("circle").attr("r", rimRadius).attr("fill", "none").attr("stroke", "#E8E3DC").attr("stroke-width", size > 100 ? 8 : 4);
-
-      const scale = weightedLoad > cap ? 1.1 : 1.0;
-      const pie = d3.pie().value(d => d.value).sort(null);
-      const arc = d3.arc().innerRadius(0).outerRadius((rimRadius - (size > 100 ? 4 : 2)) * scale);
-
-      const drawData = [{ label: "energizing", value: eHrs }, { label: "neutral", value: nHrs }, { label: "draining", value: dHrs }];
-
-      svg.append("g").selectAll("path").data(pie(drawData)).enter().append("path")
-        .attr("fill", d => colors[d.data.label])
-        .attr("d", arc);
+    if (grid.children.length === 0) {
+      grid.innerHTML = `<div class="empty-state"><p>No submissions yet this week.</p></div>`;
     }
-  </script>
+  });
+
+  // ── DETAIL PANEL ──────────────────────────────────────────────────────
+  function toggleDetail(vid, card) {
+    // Remove existing panel
+    document.querySelectorAll('.detail-panel').forEach(p => p.remove());
+    if (activePanel === vid) { activePanel = null; return; }
+    activePanel = vid;
+
+    const { tasks: tasksArr, capacity, weightedLoad, ratio, statusKey } = volunteersData[vid];
+
+    const panel = document.createElement('div');
+    panel.className = 'detail-panel';
+
+    // Task rows
+    let tasksHtml = '';
+    tasksArr.forEach(t => {
+      const emoji = t.tag === 'energizing' ? '🔥' : t.tag === 'neutral' ? '😐' : '🪨';
+      tasksHtml += `
+        <div class="detail-task-item">
+          <div class="detail-task-left">
+            <span>${emoji}</span>
+            <span>${t.name || 'Unnamed'}</span>
+            ${t.org ? `<span class="detail-task-org">(${t.org})</span>` : ''}
+          </div>
+          <span class="detail-task-hrs">${t.hours}h</span>
+        </div>`;
+    });
+
+    // Load bar
+    const barPct = Math.min(ratio * 100, 100);
+    const barColor = statusKey === 'green' ? 'var(--green)' : statusKey === 'yellow' ? 'var(--yellow)' : 'var(--red)';
+
+    panel.innerHTML = `
+      <button class="detail-close" onclick="this.parentElement.remove(); activePanel = null;">×</button>
+      <div class="detail-left" id="detail-svg-${vid}"></div>
+      <div class="detail-right">
+        <div class="detail-name">${vid}'s week</div>
+        <div class="detail-meta">Weighted load: ${weightedLoad.toFixed(1)} of ${capacity} comfortable hours</div>
+
+        <div class="detail-section-label">Tasks logged</div>
+        ${tasksHtml}
+
+        <div class="load-bar-wrap">
+          <div class="load-bar-label">
+            <span>Capacity used</span>
+            <span>${Math.round(ratio * 100)}%</span>
+          </div>
+          <div class="load-bar-track">
+            <div class="load-bar-fill" style="width:${barPct}%; background:${barColor};"></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    card.insertAdjacentElement('afterend', panel);
+    setTimeout(() => drawPlateSVG(`detail-svg-${vid}`, 200, tasksArr, capacity), 10);
+  }
+
+  // ── D3 PLATE ──────────────────────────────────────────────────────────
+  function drawPlateSVG(containerId, size, taskData, cap) {
+    const container = d3.select(`#${containerId}`);
+    container.selectAll("*").remove();
+
+    const eHrs = taskData.filter(t => t.tag === 'energizing').reduce((s, t) => s + t.hours, 0);
+    const nHrs = taskData.filter(t => t.tag === 'neutral').reduce((s, t) => s + t.hours, 0);
+    const dHrs = taskData.filter(t => t.tag === 'draining').reduce((s, t) => s + t.hours, 0);
+    const total = eHrs + nHrs + dHrs;
+    const weightedLoad = (dHrs * 1.5) + (nHrs * 1.0) + (eHrs * 0.75);
+
+    const svg = container.append("svg")
+      .attr("width", size).attr("height", size)
+      .append("g").attr("transform", `translate(${size/2},${size/2})`);
+
+    const rimRadius = size / 2 - (size > 100 ? 8 : 3);
+
+    if (size > 100) {
+      const defs = svg.append("defs");
+      const filter = defs.append("filter").attr("id", `shadow-${containerId}`);
+      filter.append("feDropShadow")
+        .attr("dx", 0).attr("dy", 2).attr("stdDeviation", 5)
+        .attr("flood-color", "rgba(44,36,22,0.1)");
+      svg.append("circle").attr("r", rimRadius + 2).attr("fill", "#EDE8DF")
+        .attr("filter", `url(#shadow-${containerId})`);
+    }
+
+    svg.append("circle").attr("r", rimRadius).attr("fill", "#F7F3EC");
+    svg.append("circle").attr("r", rimRadius).attr("fill", "none")
+      .attr("stroke", "#D4C9B5")
+      .attr("stroke-width", size > 100 ? 8 : 3);
+
+    if (total === 0) {
+      svg.append("circle").attr("r", rimRadius - (size > 100 ? 10 : 2)).attr("fill", "#EDEAE3");
+      if (size > 100) {
+        svg.append("text")
+          .attr("text-anchor", "middle").attr("dy", "5px")
+          .attr("fill", "#B5A898").attr("font-size", "13px")
+          .attr("font-family", "DM Sans, sans-serif")
+          .text("No data");
+      }
+      return;
+    }
+
+    const scale = weightedLoad > cap ? 1.08 : 1.0;
+    const pie = d3.pie().value(d => d.value).sort(null).padAngle(size > 100 ? 0.03 : 0.02);
+    const arc = d3.arc()
+      .innerRadius(size > 100 ? rimRadius * 0.12 : 0)
+      .outerRadius((rimRadius - (size > 100 ? 10 : 3)) * scale)
+      .cornerRadius(size > 100 ? 3 : 0);
+
+    const drawData = [
+      { label: "energizing", value: eHrs },
+      { label: "neutral",    value: nHrs },
+      { label: "draining",   value: dHrs }
+    ];
+
+    svg.append("g").selectAll("path")
+      .data(pie(drawData)).enter().append("path")
+      .attr("fill", d => colors[d.data.label])
+      .attr("d", arc)
+      .attr("opacity", 0.9);
+  }
+</script>
 </body>
 </html>
