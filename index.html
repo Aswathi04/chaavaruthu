@@ -3,25 +3,272 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VolunteerFlow — Capacity Planner</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>VolunteerFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #F5F0E8;
+      --surface:   #FDFAF5;
+      --border:    #E2D9C8;
+      --ink:       #2C2416;
+      --ink-soft:  #7A6E5F;
+      --ink-faint: #B5A898;
+      --accent:    #E8874A;
+      --energizing:#E8874A;
+      --neutral:   #7FAF78;
+      --draining:  #5C7A9E;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(232,135,74,0.08) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 80%, rgba(92,122,158,0.08) 0%, transparent 55%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+    }
+
+    /* Logo */
+    .logo {
+      font-family: 'Lora', serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink-faint);
+      letter-spacing: 0.5px;
+      margin-bottom: 48px;
+    }
+    .logo span { color: var(--accent); }
+
+    /* Hero plate illustration — pure CSS */
+    .plate-illustration {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 36px;
+      position: relative;
+    }
+    .plate-ring {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 7px solid #D4C9B5;
+      background: #F7F3EC;
+      box-shadow: 0 4px 20px rgba(44,36,22,0.12);
+      position: absolute;
+      top: 0; left: 0;
+      overflow: hidden;
+    }
+    /* Three arc slices via conic-gradient */
+    .plate-fill {
+      position: absolute;
+      inset: 7px;
+      border-radius: 50%;
+      background: conic-gradient(
+        var(--energizing) 0deg 130deg,
+        var(--neutral)    130deg 220deg,
+        var(--draining)   220deg 360deg
+      );
+      opacity: 0.9;
+    }
+    /* Subtle center hole */
+    .plate-center {
+      position: absolute;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: #F7F3EC;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Headline */
+    .headline {
+      font-family: 'Lora', serif;
+      font-size: 38px;
+      font-weight: 600;
+      letter-spacing: -0.8px;
+      line-height: 1.15;
+      margin-bottom: 14px;
+      color: var(--ink);
+    }
+    .headline em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .subhead {
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: 16px;
+      color: var(--ink-soft);
+      line-height: 1.6;
+      margin-bottom: 48px;
+      max-width: 360px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* CTA buttons */
+    .cta-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .cta-primary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--ink);
+      color: var(--bg);
+      text-decoration: none;
+      border-radius: 14px;
+      padding: 20px 24px;
+      transition: all 0.2s;
+    }
+    .cta-primary:hover {
+      background: #1a1408;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(44,36,22,0.2);
+    }
+
+    .cta-secondary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      color: var(--ink);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      transition: all 0.2s;
+    }
+    .cta-secondary:hover {
+      border-color: var(--ink-soft);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(44,36,22,0.08);
+    }
+
+    .cta-left { text-align: left; }
+    .cta-eyebrow {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+      opacity: 0.6;
+      margin-bottom: 3px;
+    }
+    .cta-title {
+      font-family: 'Lora', serif;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .cta-desc {
+      font-size: 12px;
+      opacity: 0.65;
+      margin-top: 2px;
+    }
+    .cta-arrow {
+      font-size: 20px;
+      opacity: 0.5;
+      flex-shrink: 0;
+      margin-left: 16px;
+    }
+
+    /* Mini plate legend for buttons */
+    .cta-dots {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .cta-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      opacity: 0.7;
+    }
+
+    /* Footer tagline */
+    .tagline {
+      margin-top: 48px;
+      font-size: 12px;
+      color: var(--ink-faint);
+      font-style: italic;
+      font-family: 'Lora', serif;
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-  
-  <div class="text-center max-w-lg">
-    <h1 class="text-4xl font-bold text-blue-900 mb-4">VolunteerFlow</h1>
-    <p class="text-lg text-gray-600 mb-8">See exactly what you can take on this week before you say yes — so you never over-commit again. </p>
-    
-    <div class="space-y-4">
-      <a href="checkin.html" class="block w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all">
-        🍽️ Volunteer View (What's On My Plate?)
-      </a>
-      
-      <a href="dashboard.html" class="block w-full py-3 px-6 bg-white hover:bg-gray-50 text-blue-900 border-2 border-blue-900 font-semibold rounded-xl shadow-sm transition-all">
-        📊 Coordinator View (Capacity Dashboard)
-      </a>
+<body>
+
+<div class="wrapper">
+
+  <div class="logo">Volunteer<span>Flow</span></div>
+
+  <!-- Plate illustration -->
+  <div class="plate-illustration">
+    <div class="plate-ring">
+      <div class="plate-fill"></div>
+      <div class="plate-center"></div>
     </div>
   </div>
+
+  <!-- Headline -->
+  <h1 class="headline">Know what you can<br>give <em>before</em> you say yes.</h1>
+  <p class="subhead">A quiet tool for volunteers who care too much — and the coordinators who want to keep them.</p>
+
+  <!-- CTAs -->
+  <div class="cta-group">
+
+    <a href="checkin.html" class="cta-primary">
+      <div class="cta-left">
+        <div class="cta-eyebrow">For volunteers</div>
+        <div class="cta-title">What's on my plate?</div>
+        <div class="cta-desc">Log your week and see what it's costing you.</div>
+        <div class="cta-dots">
+          <div class="cta-dot" style="background:#E8874A"></div>
+          <div class="cta-dot" style="background:#7FAF78"></div>
+          <div class="cta-dot" style="background:#5C7A9E"></div>
+        </div>
+      </div>
+      <div class="cta-arrow">→</div>
+    </a>
+
+    <a href="dashboard.html" class="cta-secondary">
+      <div class="cta-left">
+        <div class="cta-eyebrow">For coordinators</div>
+        <div class="cta-title">Your team this week</div>
+        <div class="cta-desc">See who's carrying too much before they tell you.</div>
+      </div>
+      <div class="cta-arrow">→</div>
+    </a>
+
+  </div>
+
+  <p class="tagline">"Resentment is the signal. This is how you catch it early."</p>
+
+</div>
 
 </body>
 </html>
