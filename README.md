@@ -84,14 +84,16 @@ https://chaavaruthu-theta.vercel.app
 
 #### Screenshots (Add at least 3)
 
-![Screenshot1](docs/screenshot-landing.png)
-*Landing page — volunteers and coordinators choose their view*
+![WhatsApp Image 2026-02-21 ](https://github.com/user-attachments/assets/1c7fc18b-1ed7-4592-a983-9d77086a9bbe)
 
-![Screenshot2](docs/screenshot-checkin.png)
-*Volunteer check-in — task rows with live plate updating as tasks are tagged*
 
-![Screenshot3](docs/screenshot-dashboard.png)
-*Coordinator dashboard — mini plates per volunteer with status badges and expandable detail panel*
+
+![WhatsApp Image 2026-02-21 at 07 29 33](https://github.com/user-attachments/assets/5ba19e81-b0c4-42c5-8f3a-1f54baa93ff4)
+
+
+![WhatsApp Image 2026-02-21 at 07 30 33](https://github.com/user-attachments/assets/14d6ac30-cc2c-40eb-80f3-394804363561)
+
+
 
 #### Diagrams
 
